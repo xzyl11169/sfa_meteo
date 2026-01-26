@@ -54,10 +54,13 @@
             .disclaimer { display: none; }
         }
 
-        /* 搜索框 */
+        /* 搜索框与控制区 */
+        .controls {
+            display: flex; gap: 10px; align-items: center;
+        }
         .search-container {
             display: flex; gap: 0;
-            width: 100%; max-width: 300px;
+            width: 100%; max-width: 200px; /* 稍微缩小一点给锁定按钮腾地 */
         }
         input {
             flex: 1;
@@ -69,10 +72,24 @@
         }
         input:focus { border-color: var(--accent); }
         button {
-            background: var(--accent); border: none; padding: 0 20px;
+            background: var(--accent); border: none; padding: 0 15px;
             border-radius: 0 4px 4px 0; color: #064e3b; font-weight: 700; cursor: pointer; white-space: nowrap;
         }
         button:hover { filter: brightness(1.1); }
+
+        /* 锁定按钮样式 */
+        .lock-btn {
+            background: transparent; border: 1px solid #475569; 
+            color: #94a3b8; padding: 7px 12px; border-radius: 4px;
+            cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 5px;
+            transition: all 0.2s;
+        }
+        .lock-btn.active {
+            background: rgba(16, 185, 129, 0.2); 
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .lock-btn:hover { border-color: var(--accent); }
 
         /* 图表容器 */
         .main-view {
@@ -112,9 +129,14 @@
             <span class="brand-tag">ECMWF</span>
             <span class="disclaimer">本预测结果为数值预报客观结论，请勿直接应用于航班运行</span>
         </div>
-        <div class="search-container">
-            <input type="text" id="icao" value="ZHEC" placeholder="ZHEC" autocomplete="off" onkeydown="if(event.key==='Enter') query()">
-            <button onclick="query()">查询</button>
+        <div class="controls">
+            <div class="search-container">
+                <input type="text" id="icao" value="ZHEC" placeholder="ZHEC" autocomplete="off" onkeydown="if(event.key==='Enter') query()">
+                <button onclick="query()">查询</button>
+            </div>
+            <button class="lock-btn" id="lockBtn" onclick="toggleLock()">
+                <span>🔓</span> <span>未锁定</span>
+            </button>
         </div>
     </div>
     
@@ -165,6 +187,33 @@
         let EXTERNAL_DB = null;
         let myChart = null;
         let currentZoomInterval = 2; 
+        
+        // 锁定功能变量
+        let isZoomLocked = false;
+        let savedZoomStart = 0;
+        let savedZoomEnd = 100;
+
+        function toggleLock() {
+            isZoomLocked = !isZoomLocked;
+            const btn = document.getElementById('lockBtn');
+            
+            if (isZoomLocked) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span>🔒</span> <span>已锁定</span>';
+                // 立即保存当前Zoom状态
+                if(myChart) {
+                    const opt = myChart.getOption();
+                    if(opt.dataZoom && opt.dataZoom[0]) {
+                        savedZoomStart = opt.dataZoom[0].start;
+                        savedZoomEnd = opt.dataZoom[0].end;
+                    }
+                }
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>🔓</span> <span>未锁定</span>';
+                // 解锁时不自动重置，直到下次查询或手动拖动
+            }
+        }
 
         function setLoader(show, text, error) {
             const el = document.getElementById('loader');
@@ -188,7 +237,6 @@
             }
         }
 
-        // 辅助函数：角度转中文方位 (去"风"字)
         function getWindDirText(deg) {
             deg = deg % 360;
             if (deg < 0) deg += 360;
@@ -232,6 +280,15 @@
             const code = document.getElementById('icao').value.trim().toUpperCase();
             if (!code || code.length !== 4) return alert("请输入4位代码");
 
+            // 查询前如果已锁定，先保存当前试图状态（以防用户在锁定状态下拖动了滑块但没点按钮）
+            if (isZoomLocked && myChart) {
+                const opt = myChart.getOption();
+                if(opt.dataZoom && opt.dataZoom[0]) {
+                    savedZoomStart = opt.dataZoom[0].start;
+                    savedZoomEnd = opt.dataZoom[0].end;
+                }
+            }
+
             setLoader(true, "定位中...", null);
 
             try {
@@ -272,10 +329,17 @@
                     const opt = myChart.getOption();
                     if(!opt.dataZoom) return;
                     
+                    // 实时更新当前Zoom值，如果锁定开启，则更新保存的值
+                    // 注意：这里我们允许用户在锁定状态下拖动，拖动后该位置成为新的锁定位置
                     const start = opt.dataZoom[0].start;
                     const end = opt.dataZoom[0].end;
-                    const range = end - start; 
                     
+                    if (isZoomLocked) {
+                        savedZoomStart = start;
+                        savedZoomEnd = end;
+                    }
+
+                    const range = end - start; 
                     const newInterval = range <= 43 ? 0 : 2; 
 
                     if (newInterval !== currentZoomInterval) {
@@ -292,6 +356,12 @@
 
             const h = data.hourly;
             
+            // 计算起报信息
+            const firstTime = h.time[0];
+            const ftDate = new Date(firstTime * 1000);
+            const ftStr = `${ftDate.getUTCDate()}日${String(ftDate.getUTCHours()).padStart(2,'0')}Z`;
+            const initStr = `模式：ECMWF IFS / 预报起始：${ftStr}`;
+
             const times = h.time.map((t, i) => {
                 const d = new Date(t * 1000); 
                 const hour = d.getUTCHours();
@@ -311,19 +381,41 @@
                 rain: '#3b82f6', snow: '#c084fc', cloud: '#a78bfa',
                 humidity: '#22d3ee', 气压: '#4ade80'
             };
-            
-            currentZoomInterval = 2; 
 
-            // 辅助函数：生成带颜色的圆点HTML
+            // 计算NOW线位置
+            const nowTs = Date.now() / 1000;
+            const nowIdx = h.time.findIndex(t => t >= nowTs);
+            const nowLine = {
+                symbol: ['none', 'none'],
+                label: { show: false }, 
+                lineStyle: { color: '#fff', type: 'dashed', width: 2, opacity: 0.8 }, 
+                data: nowIdx !== -1 ? [{ xAxis: nowIdx }] : [],
+                z: 10
+            };
+            
+            // 确定 DataZoom 的初始值
+            // 如果已锁定，使用保存的值；否则使用默认 0-100
+            let initStart = 0;
+            let initEnd = 100;
+            
+            if (isZoomLocked) {
+                initStart = savedZoomStart;
+                initEnd = savedZoomEnd;
+                // 计算当前 range 对应的 interval
+                const range = initEnd - initStart;
+                currentZoomInterval = range <= 43 ? 0 : 2;
+            } else {
+                currentZoomInterval = 2;
+            }
+
             const marker = (color) => `<span style="display:inline-block;margin-right:4px;border-radius:50%;width:10px;height:10px;background-color:${color};"></span>`;
 
             const option = {
-                backgroundColor: 'transparent',
+                backgroundColor: '#1e293b', 
                 legend: [
                     {
                         show: true, type: 'scroll',
-                        // 修改1: top下移，right左移
-                        top: 35, right: 50,
+                        top: 35, right: 160,
                         itemWidth: 14, itemHeight: 10, itemGap: 15,
                         backgroundColor: 'rgba(30, 41, 59, 0.7)', 
                         borderColor: '#475569', borderWidth: 1, borderRadius: 15,
@@ -335,8 +427,7 @@
                     },
                     {
                         show: true, type: 'scroll',
-                        // 修改2: top下移到54%避免遮挡上方X轴，right左移
-                        top: '54%', right: 55, 
+                        top: '54%', right: 160, 
                         itemWidth: 14, itemHeight: 10, itemGap: 15,
                         backgroundColor: 'rgba(30, 41, 59, 0.7)', 
                         borderColor: '#475569', borderWidth: 1, borderRadius: 15,
@@ -347,9 +438,14 @@
                     }
                 ],
                 title: {
-                    text: `${code}-${name}`,
+                    text: `{name|${code}-${name}} {info|${initStr}}`,
                     left: 20, top: 10,
-                    textStyle: { color: '#fff', fontSize: 18 }
+                    textStyle: {
+                        rich: {
+                            name: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+                            info: { color: '#94a3b8', fontSize: 12, padding: [4, 0, 0, 10] } 
+                        }
+                    }
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -445,10 +541,9 @@
                     link: { xAxisIndex: 'all' },
                     label: { backgroundColor: '#777' }
                 },
-                // 修改: Grid布局优化，Grid[0]上移，Grid[1]下移
                 grid: [
-                    { top: 70, left: 30, right: 30, height: '38%' },
-                    { top: '60%', left: 30, right: 30, height: '30%' } 
+                    { top: 70, left: 45, right: 45, height: '38%' },
+                    { top: '60%', left: 45, right: 45, height: '30%' } 
                 ],
                 xAxis: [
                     { 
@@ -473,6 +568,7 @@
                     }
                 ],
                 yAxis: [
+                    // Grid 0 (上图) Y轴
                     { 
                         type: 'value', name: '米/秒', gridIndex: 0, min: 0, 
                         splitLine: { lineStyle: { type: 'dashed', color: '#334155' } }, 
@@ -481,18 +577,36 @@
                     },
                     { 
                         type: 'value', name: '摄氏度', gridIndex: 0, 
-                        position: 'right',
+                        position: 'right', 
                         splitLine: { show: false }, 
                         axisLabel: { color: colors.temp }, 
                         nameTextStyle: { color: colors.temp } 
                     },
-                    { type: 'value', name: '百分比', gridIndex: 1, max:100, splitLine:{lineStyle:{type:'dashed',color:'#334155'}}, axisLabel:{color:colors.cloud}, nameTextStyle:{color:colors.cloud} },
-                    { type: 'value', name: '毫米', gridIndex: 1, splitLine:{show:false}, axisLabel:{color:colors.rain}, nameTextStyle:{color:colors.rain} },
+                    // Grid 1 (下图) Y轴
+                    { 
+                        type: 'value', name: '百分比', gridIndex: 1, max:100, 
+                        splitLine:{lineStyle:{type:'dashed',color:'#334155'}}, 
+                        axisLabel:{color:colors.cloud}, nameTextStyle:{color:colors.cloud} 
+                    },
+                    { 
+                        type: 'value', name: '毫米', gridIndex: 1, 
+                        position: 'right', 
+                        splitLine:{show:false}, 
+                        axisLabel:{color:colors.rain}, nameTextStyle:{color:colors.rain} 
+                    },
                     { type: 'value', min: 950, max: 1050, gridIndex: 0, show: false } 
                 ],
                 dataZoom: [
-                    { type: 'inside', xAxisIndex: [0, 1] },
-                    { type: 'slider', xAxisIndex: [0, 1], bottom: 5, height: 15, borderColor:'transparent', fillerColor:'rgba(56,189,248,0.2)' }
+                    { 
+                        type: 'inside', xAxisIndex: [0, 1], 
+                        start: initStart, end: initEnd 
+                    },
+                    { 
+                        type: 'slider', xAxisIndex: [0, 1], 
+                        bottom: 5, height: 15, 
+                        borderColor:'transparent', fillerColor:'rgba(56,189,248,0.2)',
+                        start: initStart, end: initEnd 
+                    }
                 ],
                 series: [
                     {
@@ -501,7 +615,8 @@
                         smooth: true, showSymbol: false,
                         lineStyle: { color: colors.wind, width: 2 },
                         itemStyle: { color: colors.wind },
-                        areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(56,189,248,0.3)'}, {offset:1, color:'rgba(56,189,248,0)'}]) }
+                        areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(56,189,248,0.3)'}, {offset:1, color:'rgba(56,189,248,0)'}]) },
+                        markLine: nowLine
                     },
                     {
                         name: '阵风', type: 'line', xAxisIndex: 0, yAxisIndex: 0,
@@ -545,7 +660,8 @@
                         smooth: true, showSymbol: false,
                         lineStyle: { color: colors.cloud, width: 2, type: 'dashed' },
                         itemStyle: { color: colors.cloud },
-                        z: 5
+                        z: 5,
+                        markLine: nowLine
                     },
                     {
                         name: '相对湿度', type: 'line', xAxisIndex: 1, yAxisIndex: 2, 
