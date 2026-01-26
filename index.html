@@ -47,6 +47,12 @@
             font-size: 11px; padding: 2px 6px; 
             border-radius: 4px; color: #064e3b; font-weight: bold;
         }
+        .disclaimer {
+            font-size: 12px; color: #94a3b8; font-weight: normal; margin-left: 5px;
+        }
+        @media (max-width: 600px) {
+            .disclaimer { display: none; }
+        }
 
         /* 搜索框 */
         .search-container {
@@ -104,6 +110,7 @@
         <div class="brand">
             SF Airlines AOC 
             <span class="brand-tag">ECMWF</span>
+            <span class="disclaimer">本预测结果为数值预报客观结论，请勿直接应用于航班运行</span>
         </div>
         <div class="search-container">
             <input type="text" id="icao" value="ZHEC" placeholder="ZHEC" autocomplete="off" onkeydown="if(event.key==='Enter') query()">
@@ -199,74 +206,7 @@
 
         async function findAirport(icao) {
             const AIRPORTS = {
-                'ZHEC': {lat: 30.32, lon: 115.05, name: "鄂州花湖"},
-                'ZGSZ': {lat: 22.63, lon: 113.81, name: "深圳宝安"},
-                'ZSHC': {lat: 30.22, lon: 120.43, name: "杭州萧山"},
-                'ZBAA': {lat: 40.08, lon: 116.60, name: "北京首都"},
-                'ZSPD': {lat: 31.14, lon: 121.80, name: "上海浦东"},
-                'ZSHA': {lat: 31.19, lon: 121.33, name: "上海虹桥"},
-                'ZGGG': {lat: 23.39, lon: 113.30, name: "广州白云"},
-                'ZUUU': {lat: 30.56, lon: 103.95, name: "成都双流"},
-                'ZUTF': {lat: 30.33, lon: 104.45, name: "成都天府"},
-                'ZUCK': {lat: 29.72, lon: 106.63, name: "重庆江北"},
-                'ZLXY': {lat: 34.44, lon: 108.75, name: "西安咸阳"},
-                'ZHHH': {lat: 30.78, lon: 114.20, name: "武汉天河"},
-                'ZCSX': {lat: 28.19, lon: 113.22, name: "长沙黄花"},
-                'ZSNJ': {lat: 31.74, lon: 118.86, name: "南京禄口"},
-                'ZHCC': {lat: 34.74, lon: 113.84, name: "郑州新郑"},
-                'ZBTJ': {lat: 39.12, lon: 117.34, name: "天津滨海"},
-                'ZYTX': {lat: 41.63, lon: 123.48, name: "沈阳桃仙"},
-                'ZYHB': {lat: 45.62, lon: 126.25, name: "哈尔滨太平"},
-                'ZJSY': {lat: 18.30, lon: 109.41, name: "三亚凤凰"},
-                'ZJHK': {lat: 19.93, lon: 110.45, name: "海口美兰"},
-                'ZPPP': {lat: 25.10, lon: 102.92, name: "昆明长水"},
-                'ZSAM': {lat: 24.54, lon: 118.12, name: "厦门高崎"},
-                'ZSOF': {lat: 31.98, lon: 116.97, name: "合肥新桥"},
-                'ZSNB': {lat: 29.82, lon: 121.46, name: "宁波栎社"},
-                'ZSWX': {lat: 31.49, lon: 120.42, name: "无锡硕放"},
-                'ZGYL': {lat: 25.21, lon: 110.04, name: "桂林两江"},
-                'ZUGU': {lat: 36.52, lon: 101.73, name: "西宁曹家堡"},
-                'ZWSH': {lat: 38.56, lon: 77.06, name: "喀什"},
-                'ZSWF': {lat: 36.64, lon: 119.12, name: "潍坊"}, 
-                'EBLG': {lat: 50.63, lon: 5.44,   name: "列日 (LGG)"},
-                'EDDF': {lat: 50.03, lon: 8.57,   name: "法兰克福"},
-                'EDDK': {lat: 50.86, lon: 7.14,   name: "科隆"},
-                'ELLX': {lat: 49.62, lon: 6.20,   name: "卢森堡"},
-                'EGLL': {lat: 51.47, lon: -0.46,  name: "伦敦希思罗"},
-                'LFPG': {lat: 49.00, lon: 2.55,   name: "巴黎戴高乐"},
-                'EHAM': {lat: 52.31, lon: 4.76,   name: "阿姆斯特丹"},
-                'EBBR': {lat: 50.90, lon: 4.48,   name: "布鲁塞尔"},
-                'LIMC': {lat: 45.63, lon: 8.72,   name: "米兰"},
-                'LEMD': {lat: 40.47, lon: -3.56,  name: "马德里"},
-                'UUEE': {lat: 55.97, lon: 37.41,  name: "莫斯科"},
-                'PANC': {lat: 61.17, lon: -149.99, name: "安克雷奇 (ANC)"},
-                'KJFK': {lat: 40.64, lon: -73.78,  name: "纽约 JFK"},
-                'KLAX': {lat: 33.94, lon: -118.40, name: "洛杉矶"},
-                'KORD': {lat: 41.97, lon: -87.90,  name: "芝加哥"},
-                'KMEM': {lat: 35.04, lon: -89.97,  name: "孟菲斯"},
-                'KSDF': {lat: 38.17, lon: -85.73,  name: "路易斯维尔"},
-                'KCVG': {lat: 39.04, lon: -84.66,  name: "辛辛那提"},
-                'KMIA': {lat: 25.79, lon: -80.28,  name: "迈阿密"},
-                'KDFW': {lat: 32.89, lon: -97.04,  name: "达拉斯"},
-                'KSFO': {lat: 37.61, lon: -122.37, name: "旧金山"},
-                'CYYZ': {lat: 43.67, lon: -79.62,  name: "多伦多"},
-                'CYVR': {lat: 49.19, lon: -123.18, name: "温哥华"},
-                'VHHH': {lat: 22.30, lon: 113.91, name: "香港"},
-                'RCTP': {lat: 25.07, lon: 121.23, name: "台北桃园"},
-                'RJAA': {lat: 35.77, lon: 140.39, name: "东京成田"},
-                'RJBB': {lat: 34.43, lon: 135.24, name: "大阪关西"},
-                'RKSI': {lat: 37.46, lon: 126.44, name: "首尔仁川"},
-                'WSSS': {lat: 1.36,  lon: 103.98, name: "新加坡"},
-                'VTBS': {lat: 13.69, lon: 100.75, name: "曼谷"},
-                'WMKK': {lat: 2.74,  lon: 101.70, name: "吉隆坡"},
-                'VVTS': {lat: 10.81, lon: 106.65, name: "胡志明"},
-                'RPLL': {lat: 14.50, lon: 121.01, name: "马尼拉"},
-                'VIDP': {lat: 28.55, lon: 77.10,  name: "德里"},
-                'VABB': {lat: 19.08, lon: 72.86,  name: "孟买"},
-                'OMDB': {lat: 25.25, lon: 55.36,  name: "迪拜"},
-                'OTHH': {lat: 25.27, lon: 51.60,  name: "多哈"},
-                'UCFM': {lat: 43.06, lon: 74.47,  name: "比什凯克"},
-                'UAAA': {lat: 43.35, lon: 77.04,  name: "阿拉木图"}
+                'ZHEC': {lat: 30.32, lon: 115.05, name: "鄂州花湖"}
             };
 
             if (AIRPORTS[icao]) return AIRPORTS[icao];
@@ -301,7 +241,7 @@
                 const params = new URLSearchParams({
                     latitude: loc.lat,
                     longitude: loc.lon,
-                    hourly: 'temperature_2m,precipitation,rain,snowfall,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m,pressure_msl',
+                    hourly: 'temperature_2m,dewpoint_2m,precipitation,rain,snowfall,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m,pressure_msl',
                     wind_speed_unit: 'ms',
                     timezone: 'GMT',
                     forecast_days: 7,
@@ -367,9 +307,9 @@
             });
 
             const colors = {
-                wind: '#38bdf8', gust: '#7dd3fc', temp: '#fbbf24',  
+                wind: '#38bdf8', gust: '#7dd3fc', temp: '#fbbf24', dew: '#2dd4bf', 
                 rain: '#3b82f6', snow: '#c084fc', cloud: '#a78bfa',
-                humidity: '#22d3ee', qnh: '#4ade80'
+                humidity: '#22d3ee', 气压: '#4ade80'
             };
             
             currentZoomInterval = 2; 
@@ -379,19 +319,33 @@
 
             const option = {
                 backgroundColor: 'transparent',
-                legend: {
-                    show: true, 
-                    type: 'scroll',
-                    top: 10, right: 20,
-                    itemWidth: 14, itemHeight: 10, itemGap: 15,
-                    backgroundColor: 'rgba(30, 41, 59, 0.7)', 
-                    borderColor: '#475569', borderWidth: 1, borderRadius: 15,
-                    padding: [8, 15], 
-                    textStyle: { color: '#cbd5e1', fontSize: 12 },
-                    pageIconColor: '#cbd5e1', pageTextStyle: { color: '#cbd5e1' },
-                    data: ['风速', '阵风', '气温', '降雨', '降雪', '云量', '相对湿度', 'QNH'],
-                    selected: { 'QNH': false }
-                },
+                legend: [
+                    {
+                        show: true, type: 'scroll',
+                        // 修改1: top下移，right左移
+                        top: 35, right: 50,
+                        itemWidth: 14, itemHeight: 10, itemGap: 15,
+                        backgroundColor: 'rgba(30, 41, 59, 0.7)', 
+                        borderColor: '#475569', borderWidth: 1, borderRadius: 15,
+                        padding: [8, 15], 
+                        textStyle: { color: '#cbd5e1', fontSize: 12 },
+                        pageIconColor: '#cbd5e1', pageTextStyle: { color: '#cbd5e1' },
+                        data: ['风速', '阵风', '气温', '露点', '气压'],
+                        selected: { '气压': false }
+                    },
+                    {
+                        show: true, type: 'scroll',
+                        // 修改2: top下移到54%避免遮挡上方X轴，right左移
+                        top: '54%', right: 55, 
+                        itemWidth: 14, itemHeight: 10, itemGap: 15,
+                        backgroundColor: 'rgba(30, 41, 59, 0.7)', 
+                        borderColor: '#475569', borderWidth: 1, borderRadius: 15,
+                        padding: [8, 15], 
+                        textStyle: { color: '#cbd5e1', fontSize: 12 },
+                        pageIconColor: '#cbd5e1', pageTextStyle: { color: '#cbd5e1' },
+                        data: ['降雨', '降雪', '云量', '相对湿度']
+                    }
+                ],
                 title: {
                     text: `${code}-${name}`,
                     left: 20, top: 10,
@@ -407,8 +361,8 @@
                         const wCode = h.weather_code[i];
                         const wDir = h.wind_direction_10m[i];
                         const pressure = h.pressure_msl[i];
+                        const dewPoint = h.dewpoint_2m[i]; 
                         const wxInfo = WMO_CODE_MAP[wCode] || { cn: `未知 (${wCode})`, safe: true };
-                        const wxColor = wxInfo.danger ? '#ef4444' : (wxInfo.safe ? '#fbbf24' : '#fff');
                         
                         const rawTime = h.time[i];
                         const d = new Date(rawTime * 1000);
@@ -416,20 +370,16 @@
                         
                         let html = `<div style="border-bottom:1px solid #555;padding-bottom:5px;margin-bottom:5px;font-weight:bold">${tipTime}</div>`;
                         
-                        // 1. 天气 (黄色高亮)
                         html += `<div style="display:flex;justify-content:space-between;color:#fbbf24;font-weight:bold;margin-bottom:5px;"><span>天气： </span><span>${wxInfo.danger ? '⚠️ ' : ''}${wxInfo.cn}</span></div>`;
                         
-                        // 构建数据映射
                         const map = {};
                         params.forEach(p => map[p.seriesName] = p);
 
-                        // 2. 风向 (蓝色圆点, 白色文字)
                         html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                             <span>${marker(colors.wind)} 风向</span>
                             <span style="font-weight:bold;font-family:monospace">${getWindDirText(wDir)} (${wDir}°)</span>
                         </div>`;
 
-                        // 3. 风速
                         if(map['风速']) {
                             html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                                 <span>${marker(colors.wind)} 风速</span>
@@ -437,7 +387,6 @@
                             </div>`;
                         }
 
-                        // 4. 阵风
                         if(map['阵风']) {
                             html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                                 <span>${marker(colors.gust)} 阵风</span>
@@ -445,15 +394,18 @@
                             </div>`;
                         }
 
-                        // 5. 气温
                         if(map['气温']) {
                             html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                                 <span>${marker(colors.temp)} 气温</span>
                                 <span style="font-weight:bold;font-family:monospace">${map['气温'].value} °C</span>
                             </div>`;
                         }
+                        
+                        html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
+                            <span>${marker(colors.dew)} 露点</span>
+                            <span style="font-weight:bold;font-family:monospace">${dewPoint} °C</span>
+                        </div>`;
 
-                        // 6. 相对湿度
                         if(map['相对湿度']) {
                             html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                                 <span>${marker(colors.humidity)} 相对湿度</span>
@@ -461,7 +413,6 @@
                             </div>`;
                         }
 
-                        // 7. 云量
                         if(map['云量']) {
                             html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                                 <span>${marker(colors.cloud)} 云量</span>
@@ -469,13 +420,11 @@
                             </div>`;
                         }
 
-                        // 8. 气压/QNH
                         html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
-                            <span>${marker(colors.qnh)} QNH</span>
+                            <span>${marker(colors.气压)} 气压</span>
                             <span style="font-weight:bold;font-family:monospace">${pressure} hPa</span>
                         </div>`;
 
-                        // 9. 降雨/降雪 (仅当有值时显示在最后)
                         if(map['降雨'] && map['降雨'].value > 0) {
                             html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px;color:#fff">
                                 <span>${marker(colors.rain)} 降雨</span>
@@ -496,9 +445,10 @@
                     link: { xAxisIndex: 'all' },
                     label: { backgroundColor: '#777' }
                 },
+                // 修改: Grid布局优化，Grid[0]上移，Grid[1]下移
                 grid: [
-                    { top: 80, left: 50, right: 30, height: '35%' },
-                    { top: '60%', left: 50, right: 30, height: '30%' }
+                    { top: 70, left: 30, right: 30, height: '38%' },
+                    { top: '60%', left: 30, right: 30, height: '30%' } 
                 ],
                 xAxis: [
                     { 
@@ -523,12 +473,21 @@
                     }
                 ],
                 yAxis: [
-                    { type: 'value', name: 'm/s', gridIndex: 0, min: 0, splitLine:{show:false}, axisLabel:{color:colors.wind}, nameTextStyle:{color:colors.wind} },
-                    { type: 'value', name: '°C', gridIndex: 0, splitLine:{lineStyle:{type:'dashed',color:'#334155'}}, axisLabel:{color:colors.temp}, nameTextStyle:{color:colors.temp} },
-                    
-                    { type: 'value', name: '%', gridIndex: 1, max:100, splitLine:{lineStyle:{type:'dashed',color:'#334155'}}, axisLabel:{color:colors.cloud}, nameTextStyle:{color:colors.cloud} },
-                    { type: 'value', name: 'mm', gridIndex: 1, splitLine:{show:false}, axisLabel:{color:colors.rain}, nameTextStyle:{color:colors.rain} },
-                    
+                    { 
+                        type: 'value', name: '米/秒', gridIndex: 0, min: 0, 
+                        splitLine: { lineStyle: { type: 'dashed', color: '#334155' } }, 
+                        axisLabel: { color: colors.wind }, 
+                        nameTextStyle: { color: colors.wind } 
+                    },
+                    { 
+                        type: 'value', name: '摄氏度', gridIndex: 0, 
+                        position: 'right',
+                        splitLine: { show: false }, 
+                        axisLabel: { color: colors.temp }, 
+                        nameTextStyle: { color: colors.temp } 
+                    },
+                    { type: 'value', name: '百分比', gridIndex: 1, max:100, splitLine:{lineStyle:{type:'dashed',color:'#334155'}}, axisLabel:{color:colors.cloud}, nameTextStyle:{color:colors.cloud} },
+                    { type: 'value', name: '毫米', gridIndex: 1, splitLine:{show:false}, axisLabel:{color:colors.rain}, nameTextStyle:{color:colors.rain} },
                     { type: 'value', min: 950, max: 1050, gridIndex: 0, show: false } 
                 ],
                 dataZoom: [
@@ -541,7 +500,7 @@
                         data: h.wind_speed_10m,
                         smooth: true, showSymbol: false,
                         lineStyle: { color: colors.wind, width: 2 },
-                        itemStyle: { color: colors.wind }, // 修复图例颜色
+                        itemStyle: { color: colors.wind },
                         areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(56,189,248,0.3)'}, {offset:1, color:'rgba(56,189,248,0)'}]) }
                     },
                     {
@@ -549,21 +508,28 @@
                         data: h.wind_gusts_10m,
                         smooth: true, showSymbol: false,
                         lineStyle: { color: colors.gust, width: 1, type: 'dashed' },
-                        itemStyle: { color: colors.gust } // 修复图例颜色
+                        itemStyle: { color: colors.gust }
                     },
                     {
-                        name: 'QNH', type: 'line', xAxisIndex: 0, yAxisIndex: 4, 
+                        name: '气压', type: 'line', xAxisIndex: 0, yAxisIndex: 4, 
                         data: h.pressure_msl,
                         smooth: true, showSymbol: false,
-                        lineStyle: { color: colors.qnh, width: 1, type: 'dashed' },
-                        itemStyle: { color: colors.qnh } // 修复图例颜色
+                        lineStyle: { color: colors.气压, width: 1, type: 'dashed' },
+                        itemStyle: { color: colors.气压 }
                     },
                     {
                         name: '气温', type: 'line', xAxisIndex: 0, yAxisIndex: 1,
                         data: h.temperature_2m,
                         smooth: true, showSymbol: false,
                         lineStyle: { color: colors.temp, width: 2 },
-                        itemStyle: { color: colors.temp } // 修复图例颜色
+                        itemStyle: { color: colors.temp }
+                    },
+                    {
+                        name: '露点', type: 'line', xAxisIndex: 0, yAxisIndex: 1,
+                        data: h.dewpoint_2m,
+                        smooth: true, showSymbol: false,
+                        lineStyle: { color: colors.dew, width: 1.5 },
+                        itemStyle: { color: colors.dew }
                     },
                     {
                         name: '降雨', type: 'bar', stack: 'precip', xAxisIndex: 1, yAxisIndex: 3,
@@ -578,7 +544,7 @@
                         data: h.cloud_cover,
                         smooth: true, showSymbol: false,
                         lineStyle: { color: colors.cloud, width: 2, type: 'dashed' },
-                        itemStyle: { color: colors.cloud }, // 修复图例颜色
+                        itemStyle: { color: colors.cloud },
                         z: 5
                     },
                     {
@@ -586,7 +552,7 @@
                         data: h.relative_humidity_2m,
                         smooth: true, showSymbol: false,
                         lineStyle: { width: 0 }, 
-                        itemStyle: { color: colors.humidity }, // 修复图例颜色
+                        itemStyle: { color: colors.humidity },
                         areaStyle: { opacity: 0.2, color: colors.humidity },
                         z: 4
                     }
