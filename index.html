@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SF AOC 气象监控看板 - 67全航点版 (Pro)</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        :root { --sf-red: #e6332a; --sf-dark: #333; --border-color: #dcdfe6; }
+        body { background-color: #f5f7fa; color: #303133; font-family: "Helvetica Neue", Helvetica, "PingFang SC", sans-serif; margin: 0; padding: 0; }
+        
+        /* Header & Layout */
+        .header { background: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--sf-red); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 20px; color: var(--sf-red); font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .team-info { font-size: 12px; color: #909399; margin-top: 4px; }
+        .toolbar { background: #fff; padding: 8px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+        
+        /* Table Structure */
+        .table-container { height: calc(100vh - 140px); overflow: auto; padding: 10px; contain: paint; scroll-behavior: smooth; }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; background: #fff; table-layout: fixed; min-width: 2000px; }
+        
+        /* Sticky Headers */
+        th { position: sticky; top: 0; background: #ebedf0; z-index: 100; font-size: 12px; height: 50px; border: 0.5px solid var(--border-color); color: #606266; box-shadow: 0 1px 0 #ccc; }
+        
+        /* Sticky Columns */
+        .col-icao { position: sticky; left: 0; z-index: 110; width: 110px; text-align: center; border-right: 4px solid #333 !important; font-weight: bold; background-color: #fafafa; }
+        .col-label { position: sticky; left: 110px; z-index: 105; width: 130px; font-size: 11px; border-right: 3px solid #666 !important; text-align: left; padding-left: 10px; background-color: #fafafa; }
+        
+        /* Typography */
+        .icao-code { font-size: 15px; display: block; color: var(--sf-dark); }
+        .icao-name { font-size: 12px; color: #666; font-weight: normal; display: block; margin-top: 2px; }
+        
+        /* Row Coloring */
+        .airport-group-even td { background-color: #ffffff; }
+        .airport-group-odd td { background-color: #f3f8ff; }
+        .airport-group-even .col-icao, .airport-group-even .col-label { background-color: #fafafa; }
+        .airport-group-odd .col-icao, .airport-group-odd .col-label { background-color: #eef6ff; }
+        
+        /* Hover Effects */
+        tr:hover td { background-color: #fff9db !important; }
+        tr:hover .col-icao, tr:hover .col-label { background-color: #fff9db !important; }
+        tr:hover .del-btn { visibility: visible; }
+        
+        /* Cell Styles */
+        td { border: 0.5px solid var(--border-color); padding: 0; height: 35px; text-align: center; font-size: 13px; font-family: "Consolas", "Courier New", monospace; }
+        .airport-block-end td { border-bottom: 4px solid #000 !important; }
+        
+        .editable-cell { cursor: pointer; transition: background 0.2s; min-height: 35px; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; }
+        .col-label .del-btn { color: #f56c6c; cursor: pointer; float: right; margin-right: 5px; visibility: hidden; }
+        .btn-config { margin-top: 4px; font-size: 10px; padding: 2px 4px; width: 80%; }
+        
+        /* Data Formatting */
+        .wind-box { display: flex; flex-direction: column; line-height: 1.1; align-items: center; }
+        .wind-arrow { color: #409eff; }
+        .temp-val { color: var(--sf-red); font-weight: bold; }
+        .dew-val { color: #409eff; }
+        
+        /* Weather Alerts / Coloring */
+        .bg-ts { background-color: #fde2e2 !important; color: #d81e06; font-weight: bold; }
+        .bg-snow { background-color: #f4f4f5 !important; color: #606266; font-weight: bold; }
+        .bg-rain { background-color: #ecf5ff !important; color: #409eff; }
+        .bg-fog { background-color: #fdf6ec !important; color: #e6a23c; }
+        
+        /* Threshold Highlighting */
+        .warn-high-wind { color: #d81e06; font-weight: 900; } /* 大风警示 */
+        .warn-gust { color: #e6a23c; font-weight: bold; } /* 阵风警示 */
+
+        .custom-row-adder { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
+        
+        /* Hub Tags */
+        .hub-tag { font-size: 9px; background: var(--sf-red); color: white; padding: 1px 3px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div>
+                <h1>
+                    <span>SF AOC 气象监控看板</span>
+                    <el-tag type="danger" effect="dark" size="small" style="margin-left: 10px;">PRO</el-tag>
+                </h1>
+                <div class="team-info">负责人：{{team.leader}} | 成员：{{team.members.join('、')}}</div>
+            </div>
+            <div style="display:flex; gap: 15px; align-items: center;">
+                <el-switch v-model="isUTC" active-text="UTC" inactive-text="Local" inline-prompt size="large" style="--el-switch-on-color: #13ce66; --el-switch-off-color: #409eff;"></el-switch>
+                
+                <el-radio-group v-model="model" size="small" @change="fetchData">
+                    <el-radio-button label="best_match">最优匹配</el-radio-button>
+                    <el-radio-button label="ecmwf_ifs_0p25">ECMWF</el-radio-button>
+                </el-radio-group>
+                
+                <el-button-group>
+                    <el-button type="warning" size="small" @click="airportMgrVisible = true">管理机场</el-button>
+                    <el-button type="primary" size="small" @click="exportCSV">导出 CSV</el-button>
+                    <el-button type="success" size="small" @click="exportImage">截图导出</el-button>
+                    <el-button type="danger" size="small" @click="fetchData" :loading="loading" :icon="loading ? 'Loading' : 'Refresh'">
+                        {{ loading ? '同步中...' : '同步数据' }}
+                    </el-button>
+                </el-button-group>
+                
+                <el-dropdown>
+                    <el-button size="small" circle><el-icon><MoreFilled /></el-icon></el-button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item @click="resetToDefault" style="color:#f56c6c;">重置所有数据</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <el-input v-model="search" placeholder="输入 ICAO 或 机场中文名..." size="small" style="width:220px" clearable>
+                <template #prefix><el-icon><Search /></el-icon></template>
+            </el-input>
+            
+            <el-button-group size="small">
+                <el-button plain size="small" @click="scrollToHub('ZHEC')">鄂州 ZHEC</el-button>
+                <el-button plain size="small" @click="scrollToHub('ZGSZ')">深圳 ZGSZ</el-button>
+                <el-button plain size="small" @click="scrollToHub('ZSHC')">杭州 ZSHC</el-button>
+                <el-button plain size="small" @click="scrollToHub('ZBAA')">北京 ZBAA</el-button>
+            </el-button-group>
+
+            <el-tag type="info" size="small" effect="plain">监控机场: {{airportData.length}}</el-tag>
+            <el-text size="small" type="info" style="margin-left: auto;">上次更新：{{ startTimeStr || '未同步' }}</el-text>
+        </div>
+
+        <div class="table-container" id="capture-area">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-icao">ICAO / 机场</th>
+                        <th class="col-label">要素 / 单位</th>
+                        <th v-for="h in forecastHours" :key="h.ts" :style="{background: h.isNewDay ? '#ffeceb' : ''}">
+                            {{ h.label }}<br><small>{{ h.date }}</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template v-for="(airport, aIdx) in filteredAirports" :key="airport.icao">
+                        <tr v-for="(rowKey, rIdx) in airport.showRows" 
+                            :key="airport.icao + rowKey" 
+                            :id="airport.icao + '_row'"
+                            :class="[aIdx % 2 === 0 ? 'airport-group-even' : 'airport-group-odd', rIdx === airport.showRows.length - 1 ? 'airport-block-end' : '']">
+                            
+                            <td v-if="rIdx === 0" :rowspan="airport.showRows.length" class="col-icao">
+                                <span class="icao-code">
+                                    <span v-if="isHub(airport.icao)" class="hub-tag">HUB</span>{{ airport.icao }}
+                                </span>
+                                <span class="icao-name">{{ airport.name }}</span>
+                                <el-button size="small" plain class="btn-config" @click="openRowMgr(airport)">管理行</el-button>
+                            </td>
+
+                            <td class="col-label">
+                                {{ getRowLabel(airport, rowKey) }}
+                                <el-icon class="del-btn" @click="removeRow(airport, rowKey)"><Close /></el-icon>
+                            </td>
+
+                            <td v-for="(d, dIdx) in airport.data" 
+                                :key="dIdx" 
+                                :class="rowKey === 'wx' ? getWxColor(d.wx) : ''"
+                                @click="openEditCell(airport, dIdx, rowKey)">
+                                <div class="editable-cell">
+                                    <template v-if="rowKey === 'wind'">
+                                        <div class="wind-box" :class="{'warn-high-wind': parseFloat(d.ws) >= 12}">
+                                            <svg v-if="d.ws !== '-'" class="wind-arrow" width="14" height="14" viewBox="0 0 40 40">
+                                                <g :transform="`rotate(${d.wd + 180}, 20, 20)`">
+                                                    <line x1="20" y1="35" x2="20" y2="5" stroke="currentColor" stroke-width="3" />
+                                                    <path d="M14 15 L20 5 L26 15" fill="none" stroke="currentColor" stroke-width="3" />
+                                                </g>
+                                            </svg>
+                                            <span>{{ d.ws }}</span>
+                                        </div>
+                                    </template>
+                                    
+                                    <template v-else-if="rowKey === 'gust'">
+                                        <span :class="{'warn-gust': parseFloat(d.gust) >= 15}">{{ d.gust }}</span>
+                                    </template>
+
+                                    <template v-else-if="rowKey === 'tempDew'">
+                                        <span class="temp-val">{{ d.temp }}</span>&nbsp;/&nbsp;<span class="dew-val">{{ d.dew }}</span>
+                                    </template>
+                                    
+                                    <template v-else-if="rowKey === 'cloud'">{{ d.cloud }}</template>
+                                    
+                                    <template v-else-if="rowKey === 'wx'">{{ d.wx || '-' }}</template>
+                                    
+                                    <template v-else-if="airport.customData[rowKey]">{{ airport.customData[rowKey][dIdx] || '-' }}</template>
+                                    
+                                    <template v-else>{{ d[rowKey] }}</template>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <el-dialog v-model="airportMgrVisible" title="机场清单维护" width="700px">
+            <el-form :inline="true" :model="newAirport" size="small">
+                <el-form-item><el-input v-model="newAirport.icao" placeholder="ICAO (如 ZHEC)" style="width:110px"></el-input></el-form-item>
+                <el-form-item><el-input v-model="newAirport.name" placeholder="机场中文名" style="width:110px"></el-input></el-form-item>
+                <el-form-item><el-input-number v-model="newAirport.lat" placeholder="纬度" :precision="2" :controls="false" style="width:80px"></el-input-number></el-form-item>
+                <el-form-item><el-input-number v-model="newAirport.lon" placeholder="经度" :precision="2" :controls="false" style="width:80px"></el-input-number></el-form-item>
+                <el-form-item><el-button type="primary" @click="addAirport">新增</el-button></el-form-item>
+            </el-form>
+            <el-table :data="airportData" size="small" height="450px" stripe border>
+                <el-table-column property="icao" label="ICAO" width="100" sortable></el-table-column>
+                <el-table-column property="name" label="名称" width="150"></el-table-column>
+                <el-table-column label="位置">
+                    <template #default="scope">{{scope.row.lat}}N / {{scope.row.lon}}E</template>
+                </el-table-column>
+                <el-table-column label="操作" width="100">
+                    <template #default="scope">
+                        <el-button type="danger" link @click="deleteAirport(scope.$index)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+
+        <el-dialog v-model="rowMgr.visible" title="要素显示配置" width="300px">
+            <el-checkbox-group v-model="rowMgr.airport.activeKeys" @change="updateShowRows(rowMgr.airport)" v-if="rowMgr.airport">
+                <el-checkbox v-for="opt in rowMgr.airport.availableRows" :key="opt.key" :label="opt.key" style="display:block">{{opt.label}}</el-checkbox>
+            </el-checkbox-group>
+            <div class="custom-row-adder">
+                <el-input v-model="newRowName" size="small" placeholder="添加自定义行名">
+                    <template #append><el-button @click="addNewRow(rowMgr.airport)">添加</el-button></template>
+                </el-input>
+            </div>
+        </el-dialog>
+
+        <el-dialog v-model="cellEdit.visible" :title="'人工订正 - ' + cellEdit.title" width="400px" append-to-body>
+            <el-form label-width="80px">
+                <template v-if="cellEdit.field === 'wind'">
+                    <el-form-item label="风速(m/s)"><el-input-number v-model="cellEdit.tempData.ws" :precision="1"></el-input-number></el-form-item>
+                    <el-form-item label="风向(°)"><el-input-number v-model="cellEdit.tempData.wd" :min="0" :max="360"></el-input-number></el-form-item>
+                </template>
+                <template v-else-if="cellEdit.field === 'tempDew'">
+                    <el-form-item label="温度(℃)"><el-input-number v-model="cellEdit.tempData.temp"></el-input-number></el-form-item>
+                    <el-form-item label="露点(℃)"><el-input-number v-model="cellEdit.tempData.dew"></el-input-number></el-form-item>
+                </template>
+                <template v-else-if="cellEdit.field === 'wx'">
+                    <el-form-item label="现象">
+                        <el-select v-model="cellEdit.tempData.wx" filterable allow-create>
+                            <el-option v-for="opt in wxOptions" :key="opt" :label="opt" :value="opt"></el-option>
+                        </el-select>
+                    </el-form-item>
+                </template>
+                <template v-else><el-form-item label="数值"><el-input v-model="cellEdit.tempData.val"></el-input></el-form-item></template>
+                
+                <el-divider></el-divider>
+                <el-form-item label="订正范围">
+                    <el-radio-group v-model="cellEdit.range">
+                        <el-radio label="single">仅当前时刻</el-radio>
+                        <el-radio label="future">后续所有时刻</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <template #footer><el-button type="primary" @click="saveCellEdit">保存订正</el-button></template>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, reactive, watch, nextTick } = Vue;
+        const app = createApp({
+            setup() {
+                // State
+                const loading = ref(false); 
+                const model = ref('best_match'); 
+                const search = ref(''); 
+                const startTimeStr = ref('');
+                const isUTC = ref(false); // New: UTC Toggle
+                
+                // Dialog & Editing States
+                const airportMgrVisible = ref(false); 
+                const newRowName = ref('');
+                const cellEdit = reactive({ visible: false, title: '', field: '', airport: null, dIdx: 0, range: 'single', tempData: {} });
+                const rowMgr = reactive({ visible: false, airport: null });
+                const newAirport = reactive({ icao: '', name: '', lat: 30, lon: 114 });
+                
+                // Constants
+                const team = { leader: '崔云云', members: ['曹骏','吴霄','赵铁彪','杨风良','张倩','苏永发','罗奕杰'] };
+                const wxOptions = ['-', '晴', '多云', '阴', '小雨', '中雨', '大雨', '阵雨', '雨夹雪', '小雪', '大雪', '雾', '雷暴', '沙尘', '冻雨', '强雷暴'];
+                const HUBS = ['ZHEC', 'ZGSZ', 'ZSHC', 'ZBAA'];
+                const PRESET_ROWS = [ 
+                    { key: 'wind', label: '风 (速/向)' },
+                    { key: 'gust', label: '阵风 (m/s)' }, 
+                    { key: 'vis', label: '能见度 (m)' }, 
+                    { key: 'cloud', label: '云高 (航空)' }, 
+                    { key: 'prec', label: '1h降水 (mm)' }, 
+                    { key: 'tempDew', label: '温度/露点 (℃)' },
+                    { key: 'wx', label: '天气现象' }
+                ];
+
+                // Data Initialization
+                const airportDict = {
+                    "ZHEC": ["鄂州花湖", 30.31, 115.01], "ZGSZ": ["深圳宝安", 22.64, 113.81], "ZSHC": ["杭州萧山", 30.23, 120.43], "ZBAA": ["北京首都", 40.07, 116.58],
+                    "ZYHB": ["哈尔滨太平", 45.62, 126.25], "ZYCC": ["长春龙嘉", 43.99, 125.68], "ZYTX": ["沈阳桃仙", 41.64, 123.48], "ZYTL": ["大连周水子", 38.96, 121.54],
+                    "ZBHH": ["呼和浩特", 40.85, 111.82], "ZBTJ": ["天津滨海", 39.12, 117.34], "ZBSJ": ["石家庄正定", 38.28, 114.77],
+                    "ZBLA": ["海拉尔", 49.20, 119.82], "ZBYN": ["太原武宿", 37.74, 112.62], "ZSWF": ["潍坊机场", 36.64, 119.12], "ZSQD": ["青岛胶东", 36.38, 120.07],
+                    "ZSJN": ["济南遥墙", 36.85, 117.21], "ZSYT": ["烟台蓬莱", 37.65, 120.98], "ZSXZ": ["徐州观音", 34.05, 117.55], "ZSOF": ["合肥新桥", 31.98, 116.97],
+                    "ZSNJ": ["南京禄口", 31.74, 118.86], "ZSNT": ["南通兴东", 32.07, 120.97], "ZSCG": ["常州奔牛", 31.91, 119.90], "ZSWX": ["无锡硕放", 31.49, 120.42],
+                    "ZSPD": ["上海浦东", 31.14, 121.80], "ZSNB": ["宁波栎社", 29.82, 121.46], "ZSWZ": ["温州龙湾", 27.91, 120.85],
+                    "ZSYW": ["义乌机场", 29.34, 120.03], "ZSFZ": ["福州长乐", 25.93, 119.66], "ZSAM": ["厦门高崎", 24.54, 118.12], "ZSQZ": ["泉州晋江", 24.79, 118.58],
+                    "ZGOW": ["揭阳潮汕", 23.55, 116.50], "RCTP": ["台北桃园", 25.07, 121.23], "ZGGG": ["广州白云", 23.39, 113.29],
+                    "ZGSD": ["珠海机场", 22.01, 113.37], "ZGZJ": ["湛江吴川", 21.21, 110.45], "ZJHK": ["海口美兰", 19.93, 110.45], "ZJSY": ["三亚凤凰", 18.30, 109.41],
+                    "ZGNN": ["南宁吴圩", 22.60, 108.17], "ZHHH": ["武汉天河", 30.78, 114.20], "ZHCC": ["郑州新郑", 34.51, 113.84],
+                    "ZGHA": ["长沙黄花", 28.18, 113.21], "ZUUU": ["成都双流", 30.57, 103.94], "ZUTF": ["成都天府", 30.30, 104.44], "ZUCK": ["重庆江北", 29.71, 106.63],
+                    "ZUGY": ["贵阳龙洞堡", 26.53, 106.74], "ZPPP": ["昆明长水", 25.10, 102.92], "ZPDQ": ["迪庆香格里拉", 27.83, 99.68], "ZULS": ["拉萨贡嘎", 29.29, 90.91],
+                    "ZLLL": ["兰州中川", 36.51, 103.61], "ZLXY": ["西安咸阳", 34.44, 108.75], "ZLIC": ["银川河东", 38.32, 106.39], "ZWWW": ["乌鲁木齐", 43.90, 87.47],
+                    "UAAA": ["阿拉木图", 43.35, 77.01], "UACC": ["阿斯塔纳", 51.02, 71.46], "UAKK": ["卡拉干达", 49.67, 73.33], "LHBP": ["布达佩斯", 47.43, 19.26],
+                    "UGTB": ["第比利斯", 41.66, 44.95], "EDDF": ["法兰克福", 50.03, 8.57], "EBLG": ["列日机场", 50.64, 5.44], "ENGM": ["奥斯陆", 60.19, 11.10],
+                    "KLAX": ["洛杉矶", 33.94, -118.40], "PANC": ["安克雷奇", 61.17, -149.99], "KORD": ["芝加哥", 41.97, -87.90], "KJFK": ["纽约肯尼迪", 40.64, -73.77],
+                    "RJBB": ["大阪关西", 34.43, 135.23], "RJAA": ["东京成田", 35.77, 140.39], "RPLL": ["马尼拉", 14.50, 121.01], "RKSI": ["首尔仁川", 37.46, 126.44],
+                    "VVTS": ["胡志明市", 10.81, 106.65], "VVNB": ["河内", 21.22, 105.80], "WMKK": ["吉隆坡", 2.74, 101.70], "WSSS": ["新加坡樟宜", 1.36, 103.99],
+                    "VGHS": ["达卡", 23.84, 90.39], "VTBS": ["曼谷素万那普", 13.69, 100.75], "VIDP": ["德里", 28.56, 77.10], "VOBL": ["班加罗尔", 13.19, 77.70],
+                    "VABB": ["孟买", 19.08, 72.86], "OPLA": ["拉合尔", 31.52, 74.40], "OPIS": ["伊斯兰堡", 33.54, 72.84], "OMAA": ["阿布扎比", 24.43, 54.65]
+                };
+
+                const createInitialData = () => Object.entries(airportDict).map(([icao, info]) => ({
+                    icao, name: info[0], lat: info[1], lon: info[2],
+                    activeKeys: PRESET_ROWS.map(r => r.key), availableRows: [...PRESET_ROWS],
+                    showRows: PRESET_ROWS.map(r => r.key), customData: {},
+                    data: Array.from({length: 25}, () => ({ ws:'-', wd:0, gust:'-', vis:'-', cloud:'NSC', prec:'0.0', temp:'-', dew:'-', wx:'' }))
+                }));
+
+                const airportData = ref(createInitialData());
+
+                // --- Storage & Persistence ---
+                const STORAGE_KEY = 'sf_aoc_wx_data_v1';
+                onMounted(() => {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            if (parsed && parsed.length > 0) airportData.value = parsed;
+                        } catch(e) { console.error('Load failed', e); }
+                    }
+                    fetchData();
+                });
+
+                watch(airportData, (newVal) => {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
+                }, { deep: true });
+
+                const resetToDefault = () => {
+                    if(confirm('确定要重置所有机场列表和配置吗？')) {
+                        airportData.value = createInitialData();
+                        fetchData();
+                    }
+                };
+
+                // --- Helper Functions ---
+                const isHub = (icao) => HUBS.includes(icao);
+                
+                const forecastHours = computed(() => {
+                    const res = []; const now = new Date(); now.setMinutes(0,0,0);
+                    let lastDate = '';
+                    for (let i = 0; i < 25; i++) { 
+                        const d = new Date(now.getTime() + i * 3600000); 
+                        if (isUTC.value) d.setHours(d.getHours() - 8); // Simple shift for display logic assuming browser is CN
+                        
+                        const h = d.getHours();
+                        const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+                        const isNewDay = lastDate && lastDate !== dateStr;
+                        lastDate = dateStr;
+                        
+                        res.push({ 
+                            label: `${h < 10 ? '0'+h : h}:00`, 
+                            date: dateStr, 
+                            ts: i,
+                            isNewDay: isNewDay
+                        }); 
+                    }
+                    return res;
+                });
+
+                const convertToAviationCloud = (meters, coverPercent, relHumidity, temp, dew) => {
+                    if (coverPercent < 15 && relHumidity < 70) return 'NSC';
+                    let h_meters = meters || (temp - dew) * 125;
+                    if (h_meters < 100 && relHumidity > 80) h_meters = 150;
+                    if (h_meters > 5000) return 'NSC';
+                    const val = Math.ceil(h_meters / 30.48).toString().padStart(3, '0');
+                    const type = coverPercent > 85 ? 'OVC' : coverPercent > 50 ? 'BKN' : coverPercent > 25 ? 'SCT' : 'FEW';
+                    return `${type}${val}`;
+                };
+
+                // --- Core Logic: Optimized Fetch ---
+                const fetchData = async () => {
+                    loading.value = true; 
+                    startTimeStr.value = new Date().toLocaleTimeString();
+                    
+                    try {
+                        // Optimizing: Use Promise.all for parallel fetching
+                        const promises = airportData.value.map(async (ap) => {
+                            const url = `https://api.open-meteo.com/v1/forecast?latitude=${ap.lat}&longitude=${ap.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_base,cloud_cover,relative_humidity_2m,weather_code,precipitation,temperature_2m,dew_point_2m&models=${model.value}&wind_speed_unit=ms&timezone=auto`;
+                            
+                            try {
+                                const resp = await fetch(url);
+                                const res = await resp.json();
+                                if (res.hourly) {
+                                    let startIdx = res.hourly.time.findIndex(t => t.includes(new Date().toISOString().substring(0, 13)));
+                                    if (startIdx === -1) startIdx = 0;
+                                    
+                                    ap.data = res.hourly.time.slice(startIdx, startIdx + 25).map((_, i) => {
+                                        const idx = startIdx + i; 
+                                        const code = res.hourly.weather_code[idx];
+                                        const wxMap = { 0:'晴', 1:'晴', 2:'多云', 3:'阴', 45:'雾', 48:'雾', 51:'小雨', 53:'小雨', 55:'小雨', 61:'小雨', 63:'中雨', 65:'大雨', 71:'小雪', 73:'中雪', 75:'大雪', 77:'雪粒', 80:'阵雨', 81:'阵雨', 82:'暴雨', 85:'阵雪', 86:'阵雪', 95:'雷暴', 96:'雷暴伴冰雹', 99:'强雷暴' };
+                                        
+                                        // Merge manual override if exists? (Current logic overrides API completely, which is fine)
+                                        return {
+                                            ws: res.hourly.wind_speed_10m[idx].toFixed(1), 
+                                            wd: res.hourly.wind_direction_10m[idx], 
+                                            gust: res.hourly.wind_gusts_10m[idx].toFixed(1),
+                                            vis: Math.round(res.hourly.visibility[idx]),
+                                            cloud: convertToAviationCloud(res.hourly.cloud_base[idx], res.hourly.cloud_cover[idx], res.hourly.relative_humidity_2m[idx], res.hourly.temperature_2m[idx], res.hourly.dew_point_2m[idx]),
+                                            prec: res.hourly.precipitation[idx], 
+                                            temp: Math.round(res.hourly.temperature_2m[idx]), 
+                                            dew: Math.round(res.hourly.dew_point_2m[idx]),
+                                            wx: wxMap[code] || '晴'
+                                        };
+                                    });
+                                }
+                            } catch (err) {
+                                console.warn(`Failed to fetch ${ap.icao}`, err);
+                            }
+                        });
+
+                        await Promise.all(promises);
+                    } catch (e) { 
+                        ElementPlus.ElMessage.error('网络同步异常'); 
+                    }
+                    loading.value = false;
+                };
+
+                // --- CRUD Operations ---
+                const addAirport = () => {
+                    const icao = newAirport.icao.toUpperCase();
+                    if(!icao || !newAirport.name) return;
+                    // Check duplicate
+                    if(airportData.value.find(a => a.icao === icao)) { ElementPlus.ElMessage.warning('机场已存在'); return; }
+                    
+                    airportData.value.push({
+                        ...newAirport, icao, activeKeys: PRESET_ROWS.map(r => r.key), availableRows: [...PRESET_ROWS],
+                        showRows: PRESET_ROWS.map(r => r.key), customData: {},
+                        data: Array.from({length: 25}, () => ({ ws:'-', wd:0, gust:'-', vis:'-', cloud:'NSC', prec:'0.0', temp:'-', dew:'-', wx:'' }))
+                    });
+                    // Reset form but keep lat/lon close
+                    newAirport.icao = ''; newAirport.name = '';
+                    fetchData();
+                };
+
+                const deleteAirport = (idx) => { 
+                    if(confirm('确认删除该机场？')) airportData.value.splice(idx, 1); 
+                };
+                
+                const openRowMgr = (ap) => { rowMgr.airport = ap; rowMgr.visible = true; };
+                
+                const updateShowRows = (ap) => {
+                    const newRows = ap.availableRows.filter(r => ap.activeKeys.includes(r.key)).map(r => r.key);
+                    ap.showRows = newRows;
+                };
+
+                const addNewRow = (ap) => { 
+                    if(!newRowName.value) return;
+                    const key = 'c_' + Date.now(); 
+                    ap.availableRows.push({ key, label: newRowName.value }); 
+                    ap.activeKeys.push(key); 
+                    ap.customData[key] = Array(25).fill('-'); 
+                    updateShowRows(ap); 
+                    newRowName.value = ''; 
+                };
+
+                const removeRow = (ap, key) => { 
+                    ap.activeKeys = ap.activeKeys.filter(k => k !== key); 
+                    updateShowRows(ap); 
+                };
+
+                const getRowLabel = (ap, key) => ap.availableRows.find(r => r.key === key)?.label || key;
+                
+                const openEditCell = (ap, dIdx, field) => {
+                    cellEdit.airport = ap; cellEdit.dIdx = dIdx; cellEdit.field = field; cellEdit.title = getRowLabel(ap, field);
+                    const cur = ap.data[dIdx];
+                    cellEdit.tempData = field === 'wind' ? { ws: cur.ws, wd: cur.wd } : field === 'tempDew' ? { temp: cur.temp, dew: cur.dew } : field === 'wx' ? { wx: cur.wx } : { val: ap.customData[field] ? ap.customData[field][dIdx] : cur[field] };
+                    cellEdit.visible = true;
+                };
+
+                const saveCellEdit = () => {
+                    const { airport, dIdx, field, range, tempData } = cellEdit;
+                    const end = range === 'future' ? 25 : dIdx + 1;
+                    for (let i = dIdx; i < end; i++) {
+                        if (field === 'wind') { airport.data[i].ws = tempData.ws; airport.data[i].wd = tempData.wd; }
+                        else if (field === 'tempDew') { airport.data[i].temp = tempData.temp; airport.data[i].dew = tempData.dew; }
+                        else if (field === 'wx') { airport.data[i].wx = tempData.wx; }
+                        else if (airport.customData[field]) { airport.customData[field][i] = tempData.val; }
+                        else { airport.data[i][field] = tempData.val; }
+                    }
+                    cellEdit.visible = false;
+                    ElementPlus.ElMessage.success('订正已保存');
+                };
+
+                const getWxColor = (wx) => { if (wx?.includes('雷暴')) return 'bg-ts'; if (wx?.includes('雨')) return 'bg-rain'; if (wx?.includes('雪') || wx?.includes('冰')) return 'bg-snow'; if (wx?.includes('雾')) return 'bg-fog'; return ''; };
+                
+                const exportCSV = () => { let csv = '\ufeffICAO,名称,要素,' + forecastHours.value.map(h => h.label).join(',') + '\n'; airportData.value.forEach(ap => { csv += `${ap.icao},${ap.name},风速,${ap.data.map(d => d.ws).join(',')}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SF_AOC_Weather.csv'; a.click(); };
+                
+                const exportImage = () => { html2canvas(document.querySelector("#capture-area")).then(canvas => { const a = document.createElement('a'); a.href = canvas.toDataURL(); a.download = 'Dashboard.png'; a.click(); }); };
+                
+                const scrollToHub = (icao) => {
+                    search.value = ''; // clear search to ensure it's visible
+                    nextTick(() => {
+                        const el = document.getElementById(icao + '_row');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        else ElementPlus.ElMessage.warning('未找到该枢纽');
+                    });
+                };
+
+                // Sort logic: Hubs first, then CN, then Alphabetical
+                const filteredAirports = computed(() => {
+                    const s = search.value.toUpperCase();
+                    const list = airportData.value.filter(a => a.icao.includes(s) || a.name.includes(s));
+                    return list.sort((a, b) => {
+                        const aIsHub = HUBS.includes(a.icao);
+                        const bIsHub = HUBS.includes(b.icao);
+                        if (aIsHub && !bIsHub) return -1;
+                        if (!aIsHub && bIsHub) return 1;
+                        if (aIsHub && bIsHub) return HUBS.indexOf(a.icao) - HUBS.indexOf(b.icao);
+                        const aIsCN = a.icao.startsWith('Z');
+                        const bIsCN = b.icao.startsWith('Z');
+                        if (aIsCN && !bIsCN) return -1;
+                        if (!aIsCN && bIsCN) return 1;
+                        return a.icao.localeCompare(b.icao);
+                    });
+                });
+
+                return { 
+                    team, loading, model, search, forecastHours, filteredAirports, fetchData, getWxColor, startTimeStr, exportCSV, exportImage, 
+                    airportData, airportMgrVisible, newAirport, addAirport, deleteAirport, 
+                    rowMgr, openRowMgr, updateShowRows, addNewRow, removeRow, getRowLabel, newRowName, 
+                    cellEdit, openEditCell, saveCellEdit, wxOptions,
+                    isUTC, scrollToHub, resetToDefault, isHub
+                };
+            }
+        });
+        app.use(ElementPlus); for (const [key, component] of Object.entries(ElementPlusIconsVue)) { app.component(key, component); } app.mount('#app');
+    </script>
+</body>
+</html>
