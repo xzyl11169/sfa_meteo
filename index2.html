@@ -237,7 +237,7 @@
             </div>
 
             <div class="search-container">
-                <input type="text" id="icao" value="ZHEC" placeholder="CODE" onkeydown="if(event.key==='Enter') queryAll()">
+                <input type="text" id="icao" value="ZHEC" placeholder="CODE" autocomplete="off" onkeydown="if(event.key==='Enter') queryAll()">
                 <button class="search-btn" onclick="queryAll()">Go</button>
             </div>
         </div>
@@ -449,9 +449,6 @@
                 const loc = await findAirport(code);
                 CURRENT_LOC = loc; 
 
-                // FIX: 
-                // 1. Ensemble: forecast_days -> 16 (0-15天), add snowfall_sum, remove et0
-                // 2. Weekly/Monthly: remove soil_moisture, shortwave_radiation
                 const tasks = [
                     { key: 'hourly', label: '精细化预测', url: 'https://api.open-meteo.com/v1/ecmwf', params: { hourly: 'temperature_2m,dewpoint_2m,precipitation,rain,snowfall,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m,pressure_msl', forecast_days: 7 } },
                     { key: 'ensemble', label: '集合预报', url: 'https://ensemble-api.open-meteo.com/v1/ensemble', params: { models: 'ecmwf_ifs025', daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum,wind_speed_10m_max,pressure_msl_mean', forecast_days: 16 } },
@@ -613,13 +610,12 @@
             const len = d.time.length;
             const result = {
                 time: d.time,
-                tMax_mean: new Array(len).fill(0), tMax_min: new Array(len).fill(100), tMax_max: new Array(len).fill(-100),
-                tMin_mean: new Array(len).fill(0), tMin_min: new Array(len).fill(100), tMin_max: new Array(len).fill(-100),
-                precip_mean: new Array(len).fill(0), precip_max: new Array(len).fill(0),
-                wind_mean: new Array(len).fill(0), wind_max: new Array(len).fill(0),
+                tMax_mean: new Array(len).fill(null), tMax_min: new Array(len).fill(null), tMax_max: new Array(len).fill(null),
+                tMin_mean: new Array(len).fill(null), tMin_min: new Array(len).fill(null), tMin_max: new Array(len).fill(null),
+                precip_mean: new Array(len).fill(null), precip_max: new Array(len).fill(null),
+                wind_mean: new Array(len).fill(null), wind_max: new Array(len).fill(null),
                 pressure_mean: d.pressure_msl_mean || new Array(len).fill(1013),
-                // 新增 Snowfall Sum 处理
-                snow_mean: new Array(len).fill(0),
+                snow_mean: new Array(len).fill(null),
                 members_count: 0
             };
             const keys = Object.keys(d);
@@ -631,31 +627,44 @@
             for (let i = 0; i < len; i++) {
                 let tMaxSum = 0, tMinSum = 0, pSum = 0, wSum = 0, sSum = 0;
                 let tMaxArr = [], tMinArr = [];
+                let validSamples = 0;
+
                 for (let m = 0; m < memberCount; m++) {
                     const suffix = `_member${String(m).padStart(2, '0')}`;
                     let vTmax = d[`temperature_2m_max${suffix}`] ? d[`temperature_2m_max${suffix}`][i] : d[`temperature_2m_max`][i];
                     let vTmin = d[`temperature_2m_min${suffix}`] ? d[`temperature_2m_min${suffix}`][i] : d[`temperature_2m_min`][i];
                     let vP = d[`precipitation_sum${suffix}`] ? d[`precipitation_sum${suffix}`][i] : d[`precipitation_sum`][i];
                     let vW = d[`wind_speed_10m_max${suffix}`] ? d[`wind_speed_10m_max${suffix}`][i] : d[`wind_speed_10m_max`][i];
-                    // 处理 Snowfall
                     let vS = d[`snowfall_sum${suffix}`] ? d[`snowfall_sum${suffix}`][i] : (d[`snowfall_sum`] ? d[`snowfall_sum`][i] : 0);
 
-                    if(vTmax !== undefined) {
+                    // 优化4: 增加非空检查 (Open-Meteo尾部数据可能为null)
+                    if(vTmax !== undefined && vTmax !== null) {
                         tMaxSum += vTmax; tMaxArr.push(vTmax);
                         tMinSum += vTmin; tMinArr.push(vTmin);
                         pSum += vP; wSum += vW; sSum += vS;
-                        result.precip_max[i] = Math.max(result.precip_max[i], vP);
-                        result.wind_max[i] = Math.max(result.wind_max[i], vW);
+                        
+                        // 初始化或更新最大值
+                        if (result.precip_max[i] === null) result.precip_max[i] = vP;
+                        else result.precip_max[i] = Math.max(result.precip_max[i], vP);
+
+                        if (result.wind_max[i] === null) result.wind_max[i] = vW;
+                        else result.wind_max[i] = Math.max(result.wind_max[i], vW);
+
+                        validSamples++;
                     }
                 }
-                result.tMax_mean[i] = (tMaxSum / memberCount).toFixed(1);
-                result.tMin_mean[i] = (tMinSum / memberCount).toFixed(1);
-                result.precip_mean[i] = (pSum / memberCount).toFixed(1);
-                result.snow_mean[i] = (sSum / memberCount).toFixed(1);
-                result.wind_mean[i] = (wSum / memberCount).toFixed(1);
 
-                result.tMax_min[i] = Math.min(...tMaxArr); result.tMax_max[i] = Math.max(...tMaxArr);
-                result.tMin_min[i] = Math.min(...tMinArr); result.tMin_max[i] = Math.max(...tMinArr);
+                // 只有当存在有效样本时才计算平均值，否则保持为 null
+                if (validSamples > 0) {
+                    result.tMax_mean[i] = (tMaxSum / validSamples).toFixed(1);
+                    result.tMin_mean[i] = (tMinSum / validSamples).toFixed(1);
+                    result.precip_mean[i] = (pSum / validSamples).toFixed(1);
+                    result.snow_mean[i] = (sSum / validSamples).toFixed(1);
+                    result.wind_mean[i] = (wSum / validSamples).toFixed(1);
+
+                    result.tMax_min[i] = Math.min(...tMaxArr); result.tMax_max[i] = Math.max(...tMaxArr);
+                    result.tMin_min[i] = Math.min(...tMinArr); result.tMin_max[i] = Math.max(...tMinArr);
+                }
             }
             result.isEnsemble = true;
             return result;
@@ -684,7 +693,6 @@
                 return String(hour).padStart(2,'0') + 'Z'; 
             });
 
-            // 统一色板
             const colors = {
                 wind: '#38bdf8', gust: '#7dd3fc', temp: '#fbbf24', dew: '#2dd4bf', 
                 rain: '#3b82f6', snow: '#c084fc', cloud: '#a78bfa',
@@ -702,7 +710,6 @@
 
             const marker = (color) => `<span style="display:inline-block;margin-right:4px;border-radius:50%;width:10px;height:10px;background-color:${color};"></span>`;
 
-            // Grid 布局
             const gridSettings = [
                 { top: '10%', height: '12%', left: 60, right: 50 },  
                 { top: '28%', height: '12%', left: 60, right: 50 }, 
@@ -711,7 +718,6 @@
                 { top: '82%', height: '12%', left: 60, right: 50 } 
             ];
 
-            // Legend: 放在Grid上方的间隙中
             const legendCommon = {
                 type: 'scroll', orient: 'horizontal', icon: 'roundRect', itemWidth: 12, itemHeight: 8,
                 backgroundColor: 'rgba(15, 23, 42, 0.85)', borderColor: '#334155', borderWidth: 1, borderRadius: 4, padding: [2, 6],
@@ -766,7 +772,12 @@
                         
                         const rawTime = h.time[i];
                         const d = new Date(rawTime * 1000);
-                        const tipTime = `${d.getUTCDate()}日 ${String(d.getUTCHours()).padStart(2,'0')}Z`;
+                        // 优化2: 调整精细化悬浮窗时间格式为 年-月-日-**Z (YYYY-MM-DD HHZ)
+                        const yyyy = d.getUTCFullYear();
+                        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getUTCDate()).padStart(2, '0');
+                        const hh = String(d.getUTCHours()).padStart(2, '0');
+                        const tipTime = `${yyyy}-${mm}-${dd} ${hh}Z`;
                         
                         let html = `<div style="border-bottom:1px solid #555;padding-bottom:5px;margin-bottom:5px;font-weight:bold">${tipTime}</div>`;
                         html += `<div style="display:flex;justify-content:space-between;color:#fbbf24;font-weight:bold;margin-bottom:5px;"><span>天气： </span><span>${wxInfo.danger ? '⚠️ ' : ''}${wxInfo.cn}</span></div>`;
@@ -867,7 +878,6 @@
                 return `${m}-${dd}`;
             });
 
-            // 统一颜色
             const c = {
                 tMax: '#ef4444', tMean: '#fbbf24', tMin: '#3b82f6', tArea: 'rgba(251, 191, 36, 0.2)', 
                 rain: '#38bdf8', snow: '#c084fc',
@@ -876,8 +886,6 @@
                 humid: '#06b6d4'
             };
 
-            // Grid Layout (Revert to 4)
-            // 1. Temp, 2. Precip/Snow, 3. Wind, 4. Pressure
             const gridSettings = [
                 { top: '10%', height: '14%', left: 60, right: 50 },
                 { top: '32%', height: '14%', left: 60, right: 50 },
@@ -894,7 +902,6 @@
 
             let legendItems2 = [];
             if (isEns) {
-                // 集合预报增加降雪
                 legendItems2 = [{name: '平均降水', itemStyle: {color: c.rain}}, {name: '平均降雪', itemStyle: {color: c.snow}}, {name: '最大可能降水', itemStyle: {color: c.rain}}];
             } else {
                 legendItems2 = [{name: '降雨', itemStyle: {color: c.rain}}, {name: '降雪', itemStyle: {color: c.snow}}];
@@ -908,7 +915,6 @@
             }
 
             let legendItems4 = [{name: '海平面气压', itemStyle: {color: c.pressure}}];
-            // Climate模式下若有湿度，可放在第4栏双轴，或忽略
             if (currentView === 'climate') legendItems4.push({name: '相对湿度', itemStyle: {color: c.humid}});
 
             const legendCommon = {
@@ -946,7 +952,6 @@
                     { name: '最高温均值', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMax_mean, smooth: true, lineStyle: { width: 2, color: c.tMax }, itemStyle: { color: c.tMax } },
                     { name: '最低温均值', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMin_mean, smooth: true, lineStyle: { width: 2, color: c.tMin }, itemStyle: { color: c.tMin } },
                     { name: '平均降水', type: 'bar', xAxisIndex: 1, yAxisIndex: 1, data: d.precip_mean, itemStyle: { color: c.rain, opacity: 0.6 } },
-                    // Ens Snowfall
                     { name: '平均降雪', type: 'bar', xAxisIndex: 1, yAxisIndex: 1, data: d.snow_mean, itemStyle: { color: c.snow, opacity: 0.8 } },
                     { name: '最大可能降水', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: d.precip_max, lineStyle: { type: 'dotted', color: c.rain }, symbol: 'none' },
                     { name: '平均风速', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: d.wind_mean, smooth: true, lineStyle: { width: 2, color: c.wind } },
@@ -974,7 +979,6 @@
                 { name: '海平面气压', type: 'line', xAxisIndex: 3, yAxisIndex: 3, data: isEns ? d.pressure_mean : (d.pressure_msl_mean || new Array(dates.length).fill(1013)), smooth: true, lineStyle: { width: 2, color: c.pressure }, areaStyle: { opacity: 0.1, color: c.pressure } }
             );
             
-            // 构建 Y Axis
             let yAxes = [
                 { type: 'value', name: '摄氏度', gridIndex: 0, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.tMean } },
                 { type: 'value', name: '毫米', gridIndex: 1, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.rain } },
@@ -982,7 +986,6 @@
                 { type: 'value', name: '百帕', gridIndex: 3, scale: true, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.pressure } }
             ];
             
-            // Climate 右侧湿度轴
             if (currentView === 'climate') {
                 yAxes.push({ type: 'value', name: '%', gridIndex: 3, splitLine: { show: false }, axisLabel: { color: c.humid }, position: 'right', min: 0, max: 100 });
             } else {
@@ -1007,11 +1010,15 @@
                     axisPointer: { type: 'cross', label: { backgroundColor: '#333' } },
                     formatter: function(params) {
                         const i = params[0].dataIndex;
-                        const dateStr = dates[i];
+                        // 优化1: 统一使用标准 YYYY-MM-DD 格式
+                        const ts = d.time[i];
+                        const dt = new Date(ts * 1000);
+                        const dateStr = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+                        
                         const wDir = (d.wind_direction_10m_dominant && d.wind_direction_10m_dominant[i]) ? d.wind_direction_10m_dominant[i] : null;
                         let html = `<div style="border-bottom:1px solid #555;margin-bottom:6px;padding-bottom:2px;font-weight:bold;color:#fff">${dateStr}</div>`;
                         params.forEach(p => {
-                            if (p.value !== undefined && !p.seriesName.includes('区间')) {
+                            if (p.value !== undefined && p.value !== null && !p.seriesName.includes('区间')) {
                                 let unit = '';
                                 if (p.seriesName.includes('温')) unit = '°C';
                                 else if (p.seriesName.includes('降') || p.seriesName.includes('水') || p.seriesName.includes('雪')) unit = 'mm';
