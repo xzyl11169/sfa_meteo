@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AOC 全球机场日照查询系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <style>
+        :root {
+            --sf-red: #D7000F;
+            --sf-dark: #2A2A2A;
+            --bg-body: #f4f5f7;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1a202c;
+            --text-sub: #718096;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1400px; /* 稍微放宽一点，适应单行 */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* --- 极简单行表头 (Toolbar Style) --- */
+        .toolbar-header {
+            background: var(--surface);
+            height: 60px; /* 固定高度 */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-left: 4px solid var(--sf-red); /* 左侧红条装饰 */
+            white-space: nowrap; /* 防止换行 */
+        }
+
+        /* 左侧：标题与状态 */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--sf-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 状态微章 */
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #eee;
+            color: #666;
+            font-weight: normal;
+        }
+        .status-badge.ok { background: #def7ec; color: #03543f; }
+        .status-badge.error { background: #fde8e8; color: #9b1c1c; }
+
+        /* 中间：输入操作区 */
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1; /* 占据剩余空间 */
+            justify-content: center; /* 居中显示 */
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0; /* 紧凑连接 */
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--sf-red);
+            box-shadow: 0 0 0 2px rgba(215, 0, 15, 0.1);
+        }
+
+        .form-control {
+            border: none;
+            padding: 0 12px;
+            height: 32px;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+        }
+
+        .input-icao {
+            width: 80px;
+            border-right: 1px solid #e2e8f0;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        .input-year {
+            width: 60px;
+        }
+
+        .btn-search {
+            background: var(--sf-red);
+            color: white;
+            border: none;
+            height: 32px;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0; /* 只有右侧圆角 */
+            margin-left: -1px; /* 修正边框重叠 */
+        }
+        .btn-search:hover { background: #b9000d; }
+        .btn-search:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* 右侧：视图控制 */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 切换开关 */
+        .toggle-switch {
+            display: flex;
+            background: #e2e8f0;
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        .toggle-item {
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #64748b;
+            transition: 0.2s;
+        }
+
+        .toggle-item.active {
+            background: white;
+            color: var(--sf-dark);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .btn-icon {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            height: 32px;
+            padding: 0 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-icon:hover { background: #f7fafc; border-color: #cbd5e0; }
+
+        /* --- 结果信息条 (Banner) --- */
+        .info-banner {
+            background: #2d3748;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none; /* 默认隐藏 */
+            align-items: center;
+            justify-content: space-between;
+        }
+        .info-main { display: flex; align-items: baseline; gap: 10px; }
+        .info-code { font-size: 18px; font-weight: bold; font-family: monospace; color: #fff; }
+        .info-sub { color: #a0aec0; font-size: 12px; display: flex; gap: 15px; }
+
+        /* --- 日历布局 --- */
+        .calendar-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .month-card {
+            background: var(--surface);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .month-header {
+            background: #f8f9fa;
+            color: #2d3748;
+            text-align: center;
+            padding: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .week-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #fff;
+            text-align: center;
+            font-size: 11px;
+            padding: 4px 0;
+            color: #718096;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+
+        .day-cell {
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            min-height: 48px;
+            padding: 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .day-cell:nth-child(7n) { border-right: none; }
+        .day-cell:nth-child(7n), .day-cell:nth-child(7n-6) { background-color: #fcfcfc; }
+        
+        .day-cell.today {
+            background-color: #ebf8ff;
+            box-shadow: inset 0 0 0 1px #3182ce;
+        }
+
+        .day-num { font-size: 11px; font-weight: bold; color: #2d3748; margin-bottom: 1px; }
+        .time-row { font-size: 10px; color: #718096; white-space: nowrap; line-height: 1.1; transform: scale(0.95); }
+        .icon-sun { color: #d69e2e; } .icon-moon { color: #4a5568; }
+
+        /* --- 打印样式 --- */
+        @media print {
+            @page { size: landscape; margin: 5mm; }
+            body { background: white; padding: 0; display: block; }
+            .toolbar-header, .info-banner { display: none !important; }
+            .calendar-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            .month-card { border: 1px solid #ccc; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <header class="toolbar-header">
+        <div class="header-left">
+            <h1>全球机场 <span style="font-weight:normal; font-size:14px; color:#718096; margin-top:2px;">日出日落时间查询</span></h1>
+            <span id="dbStatusBadge" class="status-badge">连接数据库...</span>
+        </div>
+
+        <div class="header-center">
+            <div class="input-group">
+                <input type="text" id="icaoInput" class="form-control input-icao" placeholder="CODE" maxlength="4" onkeydown="if(event.keyCode==13) doSearch()">
+                <input type="number" id="yearInput" class="form-control input-year" value="2026" onkeydown="if(event.keyCode==13) doSearch()">
+                <button id="searchBtn" class="btn-search" onclick="doSearch()" disabled>查询</button>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="toggle-switch">
+                <div class="toggle-item active" id="btnUTC" onclick="setMode('UTC')">UTC</div>
+                <div class="toggle-item" id="btnLT" onclick="setMode('LT')">LT</div>
+            </div>
+            <button class="btn-icon" onclick="window.print()">🖨️ 打印</button>
+        </div>
+    </header>
+
+    <div id="airportBanner" class="info-banner">
+        <div class="info-main">
+            <span id="bannerCode" class="info-code">----</span>
+            <span id="bannerName">Airport Name</span>
+        </div>
+        <div class="info-sub">
+            <span>Lat/Lon: <b id="bannerCoord">--</b></span>
+            <span>Timezone: <b id="bannerTz">--</b></span>
+        </div>
+    </div>
+
+    <div class="print-header">
+        <h2 style="margin:0" id="printTitle">日照时刻表</h2>
+        <div style="font-size:12px;" id="printSubtitle"></div>
+    </div>
+
+    <div id="calendarRoot" class="calendar-container"></div>
+
+</div>
+
+<script>
+    let AIRPORT_DB = {};
+    let currentAirport = null;
+    let viewMode = 'UTC'; 
+    const DB_URL = "https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json";
+
+    window.onload = function() {
+        const statusBadge = document.getElementById('dbStatusBadge');
+        const btn = document.getElementById('searchBtn');
+
+        fetch(DB_URL)
+            .then(response => response.json())
+            .then(data => {
+                AIRPORT_DB = data;
+                statusBadge.innerText = "DATABASE PREPARED"; 
+                statusBadge.className = 'status-badge ok';
+                btn.disabled = false;
+                document.getElementById('icaoInput').value = 'ZHEC';
+                doSearch();
+            })
+            .catch(err => {
+                statusBadge.innerText = "DB ERR";
+                statusBadge.className = 'status-badge error';
+            });
+    };
+
+    function setMode(mode) {
+        viewMode = mode;
+        document.getElementById('btnUTC').className = mode === 'UTC' ? 'toggle-item active' : 'toggle-item';
+        document.getElementById('btnLT').className = mode === 'LT' ? 'toggle-item active' : 'toggle-item';
+        if (currentAirport) renderCalendar();
+    }
+
+    function doSearch() {
+        const code = document.getElementById('icaoInput').value.trim().toUpperCase();
+        const year = parseInt(document.getElementById('yearInput').value);
+        
+        if (!code || !AIRPORT_DB[code]) {
+            alert(`未找到机场: ${code}`);
+            return;
+        }
+
+        currentAirport = AIRPORT_DB[code];
+        if (!currentAirport.tz) currentAirport.tz = 'UTC';
+
+        // 更新Banner
+        document.getElementById('airportBanner').style.display = 'flex';
+        document.getElementById('bannerCode').innerText = code;
+        document.getElementById('bannerName').innerText = currentAirport.name;
+        document.getElementById('bannerTz').innerText = currentAirport.tz;
+        document.getElementById('bannerCoord').innerText = `${currentAirport.lat.toFixed(2)}, ${currentAirport.lon.toFixed(2)}`;
+
+        // 更新打印头
+        document.getElementById('printTitle').innerText = `${year}年 ${code} 日照时刻表`;
+        document.getElementById('printSubtitle').innerText = `${currentAirport.name} (${currentAirport.tz})`;
+
+        renderCalendar();
+    }
+
+    function formatTime(dateObj, timezone) {
+        if (!dateObj || isNaN(dateObj)) return "--:--";
+        if (viewMode === 'UTC') {
+            const h = dateObj.getUTCHours();
+            const m = dateObj.getUTCMinutes();
+            return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+        } else {
+            try {
+                const formatter = new Intl.DateTimeFormat('en-GB', {
+                    timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false
+                });
+                return formatter.format(dateObj);
+            } catch (e) { return "Err"; }
+        }
+    }
+
+    function renderCalendar() {
+        const year = parseInt(document.getElementById('yearInput').value);
+        const container = document.getElementById('calendarRoot');
+        container.innerHTML = '';
+        const monthNames = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+        const today = new Date();
+        const isCurrentYear = (today.getFullYear() === year);
+
+        for (let m = 0; m < 12; m++) {
+            const monthDiv = document.createElement('div');
+            monthDiv.className = 'month-card';
+            
+            const header = document.createElement('div');
+            header.className = 'month-header';
+            header.innerText = `${monthNames[m]} / ${year}`;
+            monthDiv.appendChild(header);
+
+            const wkHeader = document.createElement('div');
+            wkHeader.className = 'week-header';
+            ['一','二','三','四','五','六','日'].forEach(d => {
+                const s = document.createElement('div'); s.innerText = d; wkHeader.appendChild(s);
+            });
+            monthDiv.appendChild(wkHeader);
+
+            const grid = document.createElement('div');
+            grid.className = 'days-grid';
+
+            let firstDay = new Date(year, m, 1).getDay();
+            firstDay = firstDay === 0 ? 7 : firstDay;
+            const daysInMonth = new Date(year, m + 1, 0).getDate();
+
+            for (let i = 1; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(year, m, d);
+                const times = SunCalc.getTimes(dateObj, currentAirport.lat, currentAirport.lon);
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                if (isCurrentYear && today.getMonth() === m && today.getDate() === d) cell.classList.add('today');
+
+                cell.innerHTML = `
+                    <div class="day-num">${d}</div>
+                    <div class="time-row"><span class="icon-sun">↑</span>${formatTime(times.sunrise, currentAirport.tz)}</div>
+                    <div class="time-row"><span class="icon-moon">↓</span>${formatTime(times.sunset, currentAirport.tz)}</div>
+                `;
+                grid.appendChild(cell);
+            }
+            monthDiv.appendChild(grid);
+            container.appendChild(monthDiv);
+        }
+    }
+</script>
+</body>
+</html>
