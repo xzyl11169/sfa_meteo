@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SF AOC Meteo 全维气象决策系统</title>
+    <title>SF AOC Meteo 多维度机场预报</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         :root {
@@ -258,8 +258,8 @@
             </svg>
         </div>
         <div class="loading-status" id="load-text">系统初始化...</div>
-        <div class="loading-detail" id="load-detail">正在连接全球气象数据中心</div>
-        <button class="skip-btn" onclick="skipLoading()">⚠ 跳过等待，强制渲染</button>
+        <div class="loading-detail" id="load-detail">正在加载ECMWF数据</div>
+        <button class="skip-btn" onclick="skipLoading()">⚠ 跳过等待，强制加载</button>
         <div class="error-box" id="error-msg"></div>
     </div>
 
