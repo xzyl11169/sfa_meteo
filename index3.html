@@ -13,7 +13,11 @@
             --surface: #ffffff;
             --border: #e2e8f0;
             --text-main: #1a202c;
-            --text-sub: #718096;
+            --text-sub: #4a5568; /* 优化点2：将次要文字颜色加深，提高对比度 */
+        }
+
+        * {
+            box-sizing: border-box; /* 确保padding不撑大元素 */
         }
 
         body {
@@ -29,7 +33,8 @@
 
         .app-container {
             width: 100%;
-            max-width: 1400px; /* 稍微放宽一点，适应单行 */
+            /* 优化点1：移除 max-width 限制，让内容铺满屏幕 */
+            /* max-width: 1400px; */ 
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -38,15 +43,16 @@
         /* --- 极简单行表头 (Toolbar Style) --- */
         .toolbar-header {
             background: var(--surface);
-            height: 60px; /* 固定高度 */
+            min-height: 70px; /* 优化点3：稍微增加头部高度，显得更大气 */
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
-            border-left: 4px solid var(--sf-red); /* 左侧红条装饰 */
-            white-space: nowrap; /* 防止换行 */
+            padding: 0 24px;
+            border-left: 4px solid var(--sf-red);
+            flex-wrap: wrap; /* 允许小屏幕换行 */
+            gap: 15px;
         }
 
         /* 左侧：标题与状态 */
@@ -58,8 +64,8 @@
 
         h1 {
             margin: 0;
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 20px; /* 优化点3：标题字体加大 */
+            font-weight: 800;
             color: var(--sf-dark);
             display: flex;
             align-items: center;
@@ -68,12 +74,12 @@
 
         /* 状态微章 */
         .status-badge {
-            font-size: 11px;
-            padding: 2px 8px;
+            font-size: 12px;
+            padding: 4px 10px;
             border-radius: 4px;
             background: #eee;
             color: #666;
-            font-weight: normal;
+            font-weight: 600;
         }
         .status-badge.ok { background: #def7ec; color: #03543f; }
         .status-badge.error { background: #fde8e8; color: #9b1c1c; }
@@ -82,60 +88,62 @@
         .header-center {
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex: 1; /* 占据剩余空间 */
-            justify-content: center; /* 居中显示 */
+            gap: 12px;
+            flex: 1;
+            justify-content: center;
         }
 
         .input-group {
             display: flex;
             align-items: center;
-            gap: 0; /* 紧凑连接 */
+            gap: 0;
             background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
+            border: 2px solid #e2e8f0; /* 优化点3：边框加粗 */
+            border-radius: 8px;
             overflow: hidden;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
+            height: 44px; /* 优化点3：固定搜索框高度，更明显 */
         }
 
         .input-group:focus-within {
             border-color: var(--sf-red);
-            box-shadow: 0 0 0 2px rgba(215, 0, 15, 0.1);
+            box-shadow: 0 0 0 4px rgba(215, 0, 15, 0.1);
         }
 
         .form-control {
             border: none;
-            padding: 0 12px;
-            height: 32px;
-            font-size: 14px;
+            padding: 0 16px; /* 优化点3：内边距加大 */
+            height: 100%;
+            font-size: 16px; /* 优化点3：字体加大 */
+            font-weight: 500; /* 优化点3：字体加粗 */
             outline: none;
             background: transparent;
+            font-family: inherit; /* 优化点3：统一字体 */
         }
 
         .input-icao {
-            width: 80px;
+            width: 100px; /* 优化点3：加宽输入框 */
             border-right: 1px solid #e2e8f0;
-            font-weight: bold;
+            font-weight: 800;
             text-transform: uppercase;
-            font-family: monospace;
-            letter-spacing: 1px;
+            font-family: "SF Mono", "Monaco", "Roboto Mono", monospace;
+            letter-spacing: 2px;
         }
 
         .input-year {
-            width: 60px;
+            width: 80px; /* 优化点3：加宽输入框 */
         }
 
         .btn-search {
             background: var(--sf-red);
             color: white;
             border: none;
-            height: 32px;
-            padding: 0 16px;
-            font-size: 13px;
-            font-weight: 600;
+            height: 100%;
+            padding: 0 24px; /* 优化点3：按钮加宽 */
+            font-size: 15px; /* 优化点3：字体加大 */
+            font-weight: 700;
             cursor: pointer;
-            border-radius: 0 5px 5px 0; /* 只有右侧圆角 */
-            margin-left: -1px; /* 修正边框重叠 */
+            transition: background 0.2s;
         }
         .btn-search:hover { background: #b9000d; }
         .btn-search:disabled { background: #ccc; cursor: not-allowed; }
@@ -151,38 +159,43 @@
         .toggle-switch {
             display: flex;
             background: #e2e8f0;
-            padding: 2px;
-            border-radius: 4px;
+            padding: 3px;
+            border-radius: 6px;
+            height: 44px; /* 优化点3：与搜索框对齐 */
         }
 
         .toggle-item {
-            padding: 4px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 3px;
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 4px;
             cursor: pointer;
             color: #64748b;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
         }
 
         .toggle-item.active {
             background: white;
             color: var(--sf-dark);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .btn-icon {
             background: white;
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             color: #4a5568;
-            height: 32px;
-            padding: 0 12px;
-            border-radius: 4px;
-            font-size: 12px;
+            height: 44px;
+            padding: 0 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
+            transition: all 0.2s;
         }
         .btn-icon:hover { background: #f7fafc; border-color: #cbd5e0; }
 
@@ -190,38 +203,41 @@
         .info-banner {
             background: #2d3748;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 6px;
-            font-size: 13px;
-            display: none; /* 默认隐藏 */
+            font-size: 14px;
+            display: none;
             align-items: center;
             justify-content: space-between;
         }
-        .info-main { display: flex; align-items: baseline; gap: 10px; }
-        .info-code { font-size: 18px; font-weight: bold; font-family: monospace; color: #fff; }
-        .info-sub { color: #a0aec0; font-size: 12px; display: flex; gap: 15px; }
+        .info-main { display: flex; align-items: baseline; gap: 12px; }
+        .info-code { font-size: 20px; font-weight: bold; font-family: monospace; color: #fff; }
+        .info-sub { color: #a0aec0; font-size: 13px; display: flex; gap: 20px; }
 
         /* --- 日历布局 --- */
         .calendar-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
+            /* 优化点1：稍微调小最小宽度，让大屏幕能塞下更多，同时保证小屏幕可读性 */
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            width: 100%;
         }
 
         .month-card {
             background: var(--surface);
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid var(--border);
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
 
         .month-header {
             background: #f8f9fa;
             color: #2d3748;
             text-align: center;
-            padding: 6px;
-            font-weight: 700;
-            font-size: 13px;
+            padding: 10px;
+            font-weight: 800;
+            font-size: 14px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -231,9 +247,10 @@
             background: #fff;
             text-align: center;
             font-size: 11px;
-            padding: 4px 0;
+            padding: 6px 0;
             color: #718096;
             border-bottom: 1px solid var(--border);
+            font-weight: 600;
         }
 
         .days-grid {
@@ -244,8 +261,8 @@
         .day-cell {
             border-right: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
-            min-height: 48px;
-            padding: 2px;
+            min-height: 55px; /* 优化点2：增加格子高度 */
+            padding: 4px 2px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -256,12 +273,27 @@
         
         .day-cell.today {
             background-color: #ebf8ff;
-            box-shadow: inset 0 0 0 1px #3182ce;
+            box-shadow: inset 0 0 0 2px #3182ce;
         }
 
-        .day-num { font-size: 11px; font-weight: bold; color: #2d3748; margin-bottom: 1px; }
-        .time-row { font-size: 10px; color: #718096; white-space: nowrap; line-height: 1.1; transform: scale(0.95); }
-        .icon-sun { color: #d69e2e; } .icon-moon { color: #4a5568; }
+        .day-num { 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: #2d3748; 
+            margin-bottom: 2px; 
+        }
+        
+        /* 优化点2：时间样式大改 */
+        .time-row { 
+            font-size: 11px; /* 字体增大 */
+            color: var(--text-sub); /* 使用更深的颜色变量 */
+            white-space: nowrap; 
+            line-height: 1.3; 
+            font-weight: 500; /* 字体加粗 */
+            /* 移除 transform: scale(0.95) */
+        }
+        .icon-sun { color: #dd6b20; } /* 图标颜色加深 */
+        .icon-moon { color: #2b6cb0; } /* 图标颜色加深并改为蓝色区分 */
 
         /* --- 打印样式 --- */
         @media print {
@@ -281,7 +313,7 @@
     
     <header class="toolbar-header">
         <div class="header-left">
-            <h1>全球机场 <span style="font-weight:normal; font-size:14px; color:#718096; margin-top:2px;">日出日落时间查询</span></h1>
+            <h1>全球机场 <span style="font-weight:normal; font-size:16px; color:#718096; margin-top:2px;">日出日落时间查询</span></h1>
             <span id="dbStatusBadge" class="status-badge">连接数据库...</span>
         </div>
 
