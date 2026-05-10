@@ -26,7 +26,6 @@
             overflow: hidden;
         }
 
-        /* 顶部导航栏 */
         .navbar {
             flex: 0 0 auto;
             background: var(--bg-panel);
@@ -59,7 +58,6 @@
         }
         @media (max-width: 1100px) { .disclaimer { display: none; } }
 
-        /* 视图切换按钮组 */
         .view-toggles {
             display: flex;
             background: #0f172a;
@@ -86,13 +84,28 @@
             color: #fff;
         }
 
-        /* 搜索与控制区 */
         .controls {
             display: flex; gap: 8px; align-items: center;
             margin-left: auto;
             flex-shrink: 0;
         }
         
+        .mode-toggle-btn {
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #38bdf8;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .mode-toggle-btn.adaptive {
+            color: #facc15;
+            border-color: #ca8a04;
+        }
+
         .search-container {
             display: flex; gap: 0; width: 120px;
         }
@@ -110,7 +123,6 @@
             border-radius: 0 4px 4px 0; color: #0f172a; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 12px;
         }
 
-        /* 气候控制区 */
         .date-picker-wrapper {
             display: flex; align-items: center; gap: 5px;
             background: #0f172a; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155;
@@ -131,7 +143,6 @@
             cursor: text;
         }
 
-        /* 主视图 */
         .main-view {
             flex: 1; 
             position: relative;
@@ -148,7 +159,6 @@
             border: 1px solid var(--border);
         }
 
-        /* 锁按钮 */
         .lock-container {
             position: absolute; 
             bottom: 5px;
@@ -171,7 +181,6 @@
         }
         .lock-btn:hover { color: #fff; border-color: #fff; }
 
-        /* 加载动画 */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15,23,42,0.95); z-index: 100;
@@ -236,6 +245,9 @@
                 </div>
             </div>
 
+            <!-- 核心：模式切换按钮 -->
+            <button id="btn-axis-mode" class="mode-toggle-btn" onclick="toggleAxisMode()" title="切换Y轴显示范围">📊 对比模式(分档固定)</button>
+
             <div class="search-container">
                 <input type="text" id="icao" value="ZHEC" placeholder="CODE" autocomplete="off" onkeydown="if(event.key==='Enter') queryAll()">
                 <button class="search-btn" onclick="queryAll()">Go</button>
@@ -286,6 +298,7 @@
         let EXTERNAL_DB = null;
         let myChart = null;
         let currentView = 'hourly'; 
+        let axisMode = 'tiered'; // 模式状态：'tiered' (分档固定) 或 'adaptive' (局部自适应)
         let isZoomLocked = false;
         let savedZoomStart = 0;
         let savedZoomEnd = 100;
@@ -299,9 +312,108 @@
         let CURRENT_LOC = null;
         let CURRENT_CODE = "ZHEC";
 
-        // ==========================================
-        // 1. 核心交互逻辑
-        // ==========================================
+        // ===============================================
+        // 核心坐标轴逻辑：智能分档固定 vs 局部自适应
+        // ===============================================
+        
+        function mergeSeriesValues(arrays) {
+            return arrays.flatMap(arr => (arr || []).map(v => Number(v)).filter(v => Number.isFinite(v)));
+        }
+
+        // 1. 局部自适应 (Adaptive)
+        function getNiceAxisRange(values, opts = {}) {
+            const valid = values;
+            if (!valid.length) return { min: 0, max: 100 };
+
+            let min = Math.min(...valid);
+            let max = Math.max(...valid);
+
+            if (opts.includeZeroMin && min > 0) min = 0;
+            if (opts.includeZeroMax && max < 0) max = 0;
+            if (min === max) { min -= 1; max += 1; }
+
+            const padding = (max - min) * (opts.paddingRatio ?? 0.15);
+            min -= padding;
+            max += padding;
+
+            if (opts.floorZero) min = Math.max(0, min);
+
+            return { min: Number(min.toFixed(1)), max: Number(max.toFixed(1)) };
+        }
+
+// 2. 升级版分档固定 (Tiered Fixed) - 带有防削顶/防切底保护
+        function getTieredAxisRange(values, type) {
+            const valid = values.filter(v => v !== null && v !== undefined && !isNaN(v));
+            if (!valid.length) {
+                if(type === 'wind') return { min: 0, max: 15 };
+                if(type === 'precip') return { min: 0, max: 10 };
+                if(type === 'temp') return { min: -5, max: 40 };
+                if(type === 'pressure') return { min: 990, max: 1030 };
+                return { min: 0, max: 100 };
+            }
+            
+            const min = Math.min(...valid);
+            const max = Math.max(...valid);
+            
+            let tMin, tMax;
+
+            // 首先：尝试匹配业务经验档位
+            if (type === 'temp') {
+                if (max <= 10 && min >= -40) { tMin = -40; tMax = 10; }           // 严寒档
+                else if (max <= 30 && min >= -15) { tMin = -15; tMax = 30; }      // 冷季/春秋档
+                else if (max <= 45 && min >= -5) { tMin = -5; tMax = 45; }        // 暖季档
+                else { tMin = -30; tMax = 50; }                                   // 极宽档兜底
+            }
+            else if (type === 'precip') {
+                if (max <= 10) { tMin = 0; tMax = 10; }                           // 微弱降水档
+                else if (max <= 25) { tMin = 0; tMax = 25; }                      // 一般降水档
+                else if (max <= 50) { tMin = 0; tMax = 50; }                      // 明显降水档
+                else if (max <= 100) { tMin = 0; tMax = 100; }                    // 暴雨档
+                else { tMin = 0; tMax = Math.ceil(max / 50) * 50; }               // 极端暴雨兜底
+            }
+            else if (type === 'wind') {
+                if (max <= 15) { tMin = 0; tMax = 15; }                           // 常规风档
+                else if (max <= 25) { tMin = 0; tMax = 25; }                      // 大风档
+                else if (max <= 35) { tMin = 0; tMax = 35; }                      // 强风档
+                else { tMin = 0; tMax = Math.ceil(max / 10) * 10; }               // 台风级别兜底
+            }
+            else if (type === 'pressure') {
+                if (max <= 1015 && min >= 970) { tMin = 970; tMax = 1015; }       // 低压带
+                else if (max <= 1040 && min >= 1005) { tMin = 1005; tMax = 1040; }// 高压带
+                else if (max <= 1035 && min >= 985) { tMin = 985; tMax = 1035; }  // 正常范围带
+                else { tMin = Math.floor(min/5)*5 - 5; tMax = Math.ceil(max/5)*5 + 5; } // 极端兜底
+            } else {
+                tMin = min; tMax = max;
+            }
+
+            // 绝对安全校验逻辑（Critical Fix）：
+            // 如果真实的极值超出了选定档位的上下限，立刻打破档位，强制包裹数据，防止数据线画到图表外面！
+            if (min < tMin) {
+                tMin = type === 'temp' ? Math.floor(min / 5) * 5 : Math.floor(min);
+            }
+            if (max > tMax) {
+                tMax = type === 'temp' ? Math.ceil(max / 5) * 5 : Math.ceil(max);
+            }
+
+            return { min: tMin, max: tMax };
+        }
+
+        function toggleAxisMode() {
+            axisMode = (axisMode === 'tiered') ? 'adaptive' : 'tiered';
+            const btn = document.getElementById('btn-axis-mode');
+            if (axisMode === 'tiered') {
+                btn.innerHTML = '📊 对比模式(分档固定)';
+                btn.classList.remove('adaptive');
+            } else {
+                btn.innerHTML = '📈 分析模式(局部自适应)';
+                btn.classList.add('adaptive');
+            }
+            if (DATA_CACHE[currentView] && CURRENT_LOC) {
+                renderFromCache(currentView);
+            }
+        }
+
+        // ===============================================
 
         function switchView(view) {
             currentView = view;
@@ -604,17 +716,44 @@
             return `${m}-${d}`;
         }
 
-        function processData(data, view) {
-            if (view !== 'ensemble') return data.daily || data; 
+function processData(data, view) {
+            // 1. 针对非集合预报（如延伸期、季节等）的去尾逻辑
+            if (view !== 'ensemble') {
+                const d = data.daily || data;
+                // 找到一个关键指标（日常取温，小时取温）来判断有效性
+                const checkKey = d.temperature_2m_max ? 'temperature_2m_max' : (d.temperature_2m ? 'temperature_2m' : null);
+                
+                if (d && d.time && checkKey && d[checkKey]) {
+                    let lastValid = -1;
+                    for (let i = d.time.length - 1; i >= 0; i--) {
+                        if (d[checkKey][i] !== null && d[checkKey][i] !== undefined) {
+                            lastValid = i;
+                            break;
+                        }
+                    }
+                    // 如果发现末尾有空数据，切掉所有数组的尾巴
+                    if (lastValid !== -1 && lastValid < d.time.length - 1) {
+                        const actualLen = lastValid + 1;
+                        Object.keys(d).forEach(k => {
+                            if (Array.isArray(d[k])) {
+                                d[k] = d[k].slice(0, actualLen);
+                            }
+                        });
+                    }
+                }
+                return d; 
+            } 
+
+            // 2. 针对集合预报的精细去尾逻辑
             const d = data.daily;
             const len = d.time.length;
             const result = {
-                time: d.time,
+                time: d.time.slice(),
                 tMax_mean: new Array(len).fill(null), tMax_min: new Array(len).fill(null), tMax_max: new Array(len).fill(null),
                 tMin_mean: new Array(len).fill(null), tMin_min: new Array(len).fill(null), tMin_max: new Array(len).fill(null),
                 precip_mean: new Array(len).fill(null), precip_max: new Array(len).fill(null),
                 wind_mean: new Array(len).fill(null), wind_max: new Array(len).fill(null),
-                pressure_mean: d.pressure_msl_mean || new Array(len).fill(1013),
+                pressure_mean: d.pressure_msl_mean ? d.pressure_msl_mean.slice() : new Array(len).fill(1013),
                 snow_mean: new Array(len).fill(null),
                 members_count: 0
             };
@@ -623,6 +762,8 @@
             keys.forEach(k => { if (k.includes('temperature_2m_max_member')) memberCount++; });
             
             if (memberCount === 0) return { ...d, isEnsemble: false };
+
+            let lastValidIndex = -1; // 记录最后一天有数据的索引
 
             for (let i = 0; i < len; i++) {
                 let tMaxSum = 0, tMinSum = 0, pSum = 0, wSum = 0, sSum = 0;
@@ -637,13 +778,11 @@
                     let vW = d[`wind_speed_10m_max${suffix}`] ? d[`wind_speed_10m_max${suffix}`][i] : d[`wind_speed_10m_max`][i];
                     let vS = d[`snowfall_sum${suffix}`] ? d[`snowfall_sum${suffix}`][i] : (d[`snowfall_sum`] ? d[`snowfall_sum`][i] : 0);
 
-                    // 优化4: 增加非空检查 (Open-Meteo尾部数据可能为null)
                     if(vTmax !== undefined && vTmax !== null) {
                         tMaxSum += vTmax; tMaxArr.push(vTmax);
                         tMinSum += vTmin; tMinArr.push(vTmin);
                         pSum += vP; wSum += vW; sSum += vS;
                         
-                        // 初始化或更新最大值
                         if (result.precip_max[i] === null) result.precip_max[i] = vP;
                         else result.precip_max[i] = Math.max(result.precip_max[i], vP);
 
@@ -654,7 +793,6 @@
                     }
                 }
 
-                // 只有当存在有效样本时才计算平均值，否则保持为 null
                 if (validSamples > 0) {
                     result.tMax_mean[i] = (tMaxSum / validSamples).toFixed(1);
                     result.tMin_mean[i] = (tMinSum / validSamples).toFixed(1);
@@ -664,15 +802,37 @@
 
                     result.tMax_min[i] = Math.min(...tMaxArr); result.tMax_max[i] = Math.max(...tMaxArr);
                     result.tMin_min[i] = Math.min(...tMinArr); result.tMin_max[i] = Math.max(...tMinArr);
+                    
+                    lastValidIndex = i; // 只要有数据，就更新最远有效天数
                 }
             }
+
+            // 【核心修复】动态截断：如果最后几天全是空数据，直接切掉这些尾巴
+            if (lastValidIndex !== -1 && lastValidIndex < len - 1) {
+                const actualLen = lastValidIndex + 1;
+                result.time = result.time.slice(0, actualLen);
+                result.tMax_mean = result.tMax_mean.slice(0, actualLen);
+                result.tMax_min = result.tMax_min.slice(0, actualLen);
+                result.tMax_max = result.tMax_max.slice(0, actualLen);
+                result.tMin_mean = result.tMin_mean.slice(0, actualLen);
+                result.tMin_min = result.tMin_min.slice(0, actualLen);
+                result.tMin_max = result.tMin_max.slice(0, actualLen);
+                result.precip_mean = result.precip_mean.slice(0, actualLen);
+                result.precip_max = result.precip_max.slice(0, actualLen);
+                result.wind_mean = result.wind_mean.slice(0, actualLen);
+                result.wind_max = result.wind_max.slice(0, actualLen);
+                result.pressure_mean = result.pressure_mean.slice(0, actualLen);
+                result.snow_mean = result.snow_mean.slice(0, actualLen);
+            }
+
             result.isEnsemble = true;
             return result;
         }
 
-        // ==========================================
-        // 4. 精细化图表渲染 (Hourly) - 5 Grid
-        // ==========================================
+        // ===============================================
+        // 渲染图表
+        // ===============================================
+
         function renderHourlyChart(data, code, name, modelInfo) {
             const dom = document.getElementById('chart');
             if (!myChart) {
@@ -699,6 +859,25 @@
                 humidity: '#22d3ee', pressure: '#f59e0b',
                 grid: '#334155', text: '#cbd5e1'
             };
+
+            // 获取计算后的坐标轴边界 (智能分档 或 自适应)
+            const windVals = mergeSeriesValues([h.wind_speed_10m, h.wind_gusts_10m]);
+            const precipVals = mergeSeriesValues([h.rain, h.snowfall]);
+            const tempVals = mergeSeriesValues([h.temperature_2m, h.dewpoint_2m]);
+            const presVals = mergeSeriesValues([h.pressure_msl]);
+
+            const windAxis = axisMode === 'tiered' 
+                ? getTieredAxisRange(windVals, 'wind') 
+                : getNiceAxisRange(windVals, { includeZeroMin: true, floorZero: true, paddingRatio: 0.1 });
+            const precipAxis = axisMode === 'tiered' 
+                ? getTieredAxisRange(precipVals, 'precip') 
+                : getNiceAxisRange(precipVals, { includeZeroMin: true, floorZero: true, paddingRatio: 0.1 });
+            const tempAxis = axisMode === 'tiered' 
+                ? getTieredAxisRange(tempVals, 'temp') 
+                : getNiceAxisRange(tempVals, { paddingRatio: 0.15 });
+            const pressureAxis = axisMode === 'tiered' 
+                ? getTieredAxisRange(presVals, 'pressure') 
+                : getNiceAxisRange(presVals, { paddingRatio: 0.08 });
 
             const nowTs = Date.now() / 1000;
             const nowIdx = h.time.findIndex(t => t >= nowTs);
@@ -772,7 +951,6 @@
                         
                         const rawTime = h.time[i];
                         const d = new Date(rawTime * 1000);
-                        // 优化2: 调整精细化悬浮窗时间格式为 年-月-日-**Z (YYYY-MM-DD HHZ)
                         const yyyy = d.getUTCFullYear();
                         const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
                         const dd = String(d.getUTCDate()).padStart(2, '0');
@@ -813,11 +991,11 @@
                     { type: 'category', data: times, gridIndex: 4, axisLine: commonXAxisStyle, axisTick: { show: true }, axisLabel: { ...commonLabelStyle, formatter: commonAxisFormatter } }
                 ],
                 yAxis: [
-                    { type: 'value', name: '米/秒', gridIndex: 0, min: 0, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.wind }, nameTextStyle: { color: colors.wind, align:'left' } },
-                    { type: 'value', name: '毫米', gridIndex: 1, min: 0, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.rain }, nameTextStyle: { color: colors.rain, align:'left' } },
-                    { type: 'value', name: '摄氏度', gridIndex: 2, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.temp }, nameTextStyle: { color: colors.temp, align:'left' } },
-                    { type: 'value', name: '百分比', gridIndex: 3, min: 0, max: 100, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.cloud }, nameTextStyle: { color: colors.cloud, align:'left' } },
-                    { type: 'value', name: '百帕', gridIndex: 4, min: 980, max: 1040, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.pressure }, nameTextStyle: { color: colors.pressure, align:'left' }, scale: true }
+                    { type: 'value', name: '米/秒', gridIndex: 0, min: windAxis.min, max: windAxis.max, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.wind }, nameTextStyle: { color: colors.wind, align:'left' }, scale: false },
+                    { type: 'value', name: '毫米', gridIndex: 1, min: precipAxis.min, max: precipAxis.max, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.rain }, nameTextStyle: { color: colors.rain, align:'left' }, scale: false },
+                    { type: 'value', name: '摄氏度', gridIndex: 2, min: tempAxis.min, max: tempAxis.max, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.temp }, nameTextStyle: { color: colors.temp, align:'left' }, scale: false },
+                    { type: 'value', name: '百分比', gridIndex: 3, min: 0, max: 100, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.cloud }, nameTextStyle: { color: colors.cloud, align:'left' }, scale: false },
+                    { type: 'value', name: '百帕', gridIndex: 4, min: pressureAxis.min, max: pressureAxis.max, splitLine: { lineStyle: { type: 'dashed', color: colors.grid } }, axisLabel: { color: colors.pressure }, nameTextStyle: { color: colors.pressure, align:'left' }, scale: false }
                 ],
                 dataZoom: [
                     { type: 'slider', xAxisIndex: [0, 1, 2, 3, 4], bottom: 5, right: 60, left: 50, height: 25, borderColor:'transparent', fillerColor:'rgba(56,189,248,0.2)', start: savedZoomStart, end: savedZoomEnd }
@@ -838,7 +1016,7 @@
             myChart.setOption(option, true);
             
             myChart.off('dataZoom');
-            myChart.on('dataZoom', function (params) {
+            myChart.on('dataZoom', function () {
                 const opt = myChart.getOption();
                 if(opt.dataZoom && opt.dataZoom[0]) {
                     const z = opt.dataZoom[0];
@@ -854,9 +1032,6 @@
             });
         }
 
-        // ==========================================
-        // 5. 通用图表渲染 (Ensemble/Weekly/Monthly/Climate) - 4 Grid (回归经典布局)
-        // ==========================================
         function renderChart(d, code, name, modelInfo) {
             const dom = document.getElementById('chart');
             if (!myChart) {
@@ -882,9 +1057,19 @@
                 tMax: '#ef4444', tMean: '#fbbf24', tMin: '#3b82f6', tArea: 'rgba(251, 191, 36, 0.2)', 
                 rain: '#38bdf8', snow: '#c084fc',
                 wind: '#10b981', gust: '#34d399',
-                pressure: '#f59e0b', grid: '#334155', text: '#cbd5e1',
-                humid: '#06b6d4'
+                pressure: '#f59e0b', grid: '#334155', text: '#cbd5e1', humid: '#06b6d4'
             };
+
+            // 获取计算后的坐标轴边界
+            const tempVals = isEns ? mergeSeriesValues([d.tMax_mean, d.tMin_mean, d.tMax_max, d.tMin_min]) : mergeSeriesValues([d.temperature_2m_max, d.temperature_2m_mean, d.temperature_2m_min]);
+            const precipVals = isEns ? mergeSeriesValues([d.precip_mean, d.precip_max, d.snow_mean]) : mergeSeriesValues([d.rain_sum || d.precipitation_sum, d.snowfall_sum]);
+            const windVals = isEns ? mergeSeriesValues([d.wind_mean, d.wind_max]) : mergeSeriesValues([d.wind_speed_10m_max, d.wind_gusts_10m_max]);
+            const presVals = mergeSeriesValues([isEns ? d.pressure_mean : (d.pressure_msl_mean || [])]);
+
+            const tempAxis = axisMode === 'tiered' ? getTieredAxisRange(tempVals, 'temp') : getNiceAxisRange(tempVals, { paddingRatio: 0.15 });
+            const precipAxis = axisMode === 'tiered' ? getTieredAxisRange(precipVals, 'precip') : getNiceAxisRange(precipVals, { includeZeroMin: true, floorZero: true, paddingRatio: 0.1 });
+            const windAxis = axisMode === 'tiered' ? getTieredAxisRange(windVals, 'wind') : getNiceAxisRange(windVals, { includeZeroMin: true, floorZero: true, paddingRatio: 0.1 });
+            const pressureAxis = axisMode === 'tiered' ? getTieredAxisRange(presVals, 'pressure') : getNiceAxisRange(presVals, { paddingRatio: 0.08 });
 
             const gridSettings = [
                 { top: '10%', height: '14%', left: 60, right: 50 },
@@ -980,14 +1165,14 @@
             );
             
             let yAxes = [
-                { type: 'value', name: '摄氏度', gridIndex: 0, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.tMean } },
-                { type: 'value', name: '毫米', gridIndex: 1, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.rain } },
-                { type: 'value', name: '米/秒', gridIndex: 2, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.wind } },
-                { type: 'value', name: '百帕', gridIndex: 3, scale: true, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.pressure } }
+                { type: 'value', name: '摄氏度', gridIndex: 0, min: tempAxis.min, max: tempAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.tMean }, scale: false },
+                { type: 'value', name: '毫米', gridIndex: 1, min: precipAxis.min, max: precipAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.rain }, scale: false },
+                { type: 'value', name: '米/秒', gridIndex: 2, min: windAxis.min, max: windAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.wind }, scale: false },
+                { type: 'value', name: '百帕', gridIndex: 3, min: pressureAxis.min, max: pressureAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.pressure }, scale: false }
             ];
             
             if (currentView === 'climate') {
-                yAxes.push({ type: 'value', name: '%', gridIndex: 3, splitLine: { show: false }, axisLabel: { color: c.humid }, position: 'right', min: 0, max: 100 });
+                yAxes.push({ type: 'value', name: '%', gridIndex: 3, splitLine: { show: false }, axisLabel: { color: c.humid }, position: 'right', min: 0, max: 100, scale: false });
             } else {
                 yAxes.push({ type: 'value', gridIndex: 3, show: false });
             }
@@ -1010,7 +1195,6 @@
                     axisPointer: { type: 'cross', label: { backgroundColor: '#333' } },
                     formatter: function(params) {
                         const i = params[0].dataIndex;
-                        // 优化1: 统一使用标准 YYYY-MM-DD 格式
                         const ts = d.time[i];
                         const dt = new Date(ts * 1000);
                         const dateStr = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
@@ -1052,7 +1236,7 @@
 
             myChart.setOption(option, true);
             myChart.off('dataZoom');
-            myChart.on('dataZoom', function (params) {
+            myChart.on('dataZoom', function () {
                 const opt = myChart.getOption();
                 if(opt.dataZoom && opt.dataZoom[0]) {
                     const z = opt.dataZoom[0];
