@@ -36,6 +36,39 @@
         }
 
         /* --- 极简单行表头 (Toolbar Style) --- */
+        .site-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .site-nav-label {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            color: #0f172a;
+        }
+        .site-nav-link {
+            color: #64748b;
+            font-size: 12px;
+            text-decoration: none;
+            padding: 5px 8px;
+            border-radius: 5px;
+            border: 1px solid transparent;
+        }
+        .site-nav-link:hover {
+            color: #0f172a;
+            background: #e2e8f0;
+        }
+        .site-nav-link.active {
+            color: #0369a1;
+            border-color: #bae6fd;
+            background: #e0f2fe;
+        }
         .toolbar-header {
             background: var(--surface);
             height: 60px; /* 固定高度 */
@@ -54,6 +87,12 @@
             display: flex;
             align-items: center;
             gap: 15px;
+        }
+        .page-role {
+            font-size: 12px;
+            color: #64748b;
+            display: block;
+            margin-top: 2px;
         }
 
         h1 {
@@ -358,6 +397,7 @@
                 padding: 12px 16px;
                 white-space: normal;
             }
+            .site-nav { width: 100%; overflow-x: auto; }
             .header-center { order: 3; flex-basis: 100%; justify-content: flex-start; }
             .info-banner { flex-direction: column; align-items: flex-start; gap: 8px; }
             .info-sub { justify-content: flex-start; }
@@ -385,9 +425,16 @@
 <div class="app-container">
     
     <header class="toolbar-header">
+        <nav class="site-nav" data-site-nav aria-label="SF AOC METEO 专业工具导航">
+            <span class="site-nav-label">SF AOC METEO</span>
+            <a class="site-nav-link" href="./">精细化预报</a>
+            <a class="site-nav-link" href="./index2">多尺度研判</a>
+            <a class="site-nav-link active" href="./index3">日照参考</a>
+        </nav>
         <div class="header-left">
-            <h1>全球机场 <span style="font-weight:normal; font-size:14px; color:#718096; margin-top:2px;">日出日落时间查询</span></h1>
+            <h1>机场日照与昼夜节律参考</h1>
             <span id="dbStatusBadge" class="status-badge">连接数据库...</span>
+            <span class="page-role">UTC/LT · 日出日落 · 昼长变化</span>
         </div>
 
         <div class="header-center">
@@ -417,6 +464,7 @@
             <span>Lat/Lon: <b id="bannerCoord">--</b></span>
             <span>Timezone: <b id="bannerTz">--</b></span>
             <span id="bannerMethod" class="method-note">算法: 经纬度计算，未校正海拔/地形遮挡</span>
+            <span class="method-note">本工具基于公开数值预报、机场基础资料和理论计算结果生成，仅供气象值班、趋势研判和运行参考，不作为放行、签派或运行标准的唯一依据。</span>
         </div>
     </div>
 

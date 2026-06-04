@@ -38,6 +38,39 @@
             z-index: 50;
         }
 
+        .site-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: rgba(15, 23, 42, 0.92);
+            border-right: 1px solid #334155;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .site-nav-label {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            color: #e2e8f0;
+        }
+        .site-nav-link {
+            color: #94a3b8;
+            font-size: 12px;
+            text-decoration: none;
+            padding: 5px 8px;
+            border-radius: 5px;
+            border: 1px solid transparent;
+        }
+        .site-nav-link:hover {
+            color: #f8fafc;
+            background: rgba(51, 65, 85, 0.78);
+        }
+        .site-nav-link.active {
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.35);
+            background: rgba(14, 165, 233, 0.12);
+        }
         .brand { 
             font-size: 18px; font-weight: 700; letter-spacing: 0.5px; 
             display: flex; align-items: center; gap: 8px; white-space: nowrap;
@@ -50,8 +83,17 @@
         .disclaimer {
             font-size: 12px; color: #94a3b8; font-weight: normal; margin-left: 5px;
         }
+        .page-role {
+            font-size: 12px;
+            color: #cbd5e1;
+            margin-left: 10px;
+            padding-left: 10px;
+            border-left: 1px solid #334155;
+        }
         @media (max-width: 600px) {
             .disclaimer { display: none; }
+            .site-nav { width: 100%; overflow-x: auto; }
+            .ops-note { position: static; padding: 8px 10px 0; background: #020617; }
         }
 
         /* 搜索框与控制区 */
@@ -133,15 +175,47 @@
         }
         .source-note a { color: #38bdf8; text-decoration: none; }
         .source-note a:hover { text-decoration: underline; }
+        .ops-note {
+            position: absolute;
+            top: 44px;
+            left: 18px;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-width: calc(100vw - 36px);
+        }
+        .ops-pill {
+            background: rgba(15, 23, 42, 0.82);
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            color: #cbd5e1;
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .ops-pill strong { color: #f8fafc; }
+        .ops-pill a { color: #38bdf8; text-decoration: none; }
+        .ops-pill a:hover { text-decoration: underline; }
+        @media (max-width: 600px) {
+            .ops-note { position: static; padding: 8px 10px 0; background: #020617; }
+        }
     </style>
 </head>
 <body>
 
     <div class="navbar">
+        <nav class="site-nav" data-site-nav aria-label="SF AOC METEO 专业工具导航">
+            <span class="site-nav-label">SF AOC METEO</span>
+            <a class="site-nav-link active" href="./">精细化预报</a>
+            <a class="site-nav-link" href="./index2">多尺度研判</a>
+            <a class="site-nav-link" href="./index3">日照参考</a>
+        </nav>
         <div class="brand">
-            SF AOC Meteo 
-            <span class="brand-tag">ECMWF</span>
-            <span class="disclaimer">本预测结果为数值预报客观结论，请勿直接应用于航班运行</span>
+            <span>精细化机场预报工作台</span>
+            <span class="brand-tag">0-7D ECMWF</span>
+            <span class="page-role">逐小时要素 · 值班参考</span>
+            <span class="disclaimer">本工具基于公开数值预报、机场基础资料和理论计算结果生成，仅供气象值班、趋势研判和运行参考，不作为放行、签派或运行标准的唯一依据。</span>
         </div>
         <div class="controls">
             <div class="search-container">
@@ -156,6 +230,11 @@
     
     <div class="main-view">
         <div id="chart"></div>
+        <div class="ops-note" aria-label="专业气象工具入口">
+            <div class="ops-pill"><strong>短期值班：</strong>查看未来 7 天逐小时温度、风、云量、降水和气压。</div>
+            <div class="ops-pill"><strong>趋势补充：</strong><a href="./index2">进入多尺度研判</a> 查看集合、延伸期、季节和气候参考。</div>
+            <div class="ops-pill"><strong>日照参考：</strong><a href="./index3">进入日照工具</a> 查看机场当地日出日落和昼长变化。</div>
+        </div>
         <div class="source-note">数据来源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> / <a href="https://github.com/mwgg/Airports" target="_blank" rel="noopener">mwgg Airports</a> / <a href="https://echarts.apache.org/" target="_blank" rel="noopener">ECharts</a>；数值预报结果仅供值班参考。</div>
         <div id="loader">
             <div class="spinner" id="spin-icon"></div>
