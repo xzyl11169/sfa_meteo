@@ -27,7 +27,7 @@ for (const page of toolPages) {
   assert(/localStorage\.getItem\(DB_CACHE_KEY\)/.test(script), `${page} should read airport DB cache`);
   assert(/localStorage\.setItem\(DB_CACHE_KEY/.test(script), `${page} should write airport DB cache`);
   assert(/function\s+fetchJsonWithTimeout\s*\(/.test(script), `${page} should provide fetchJsonWithTimeout`);
-  assert(/数据来源/.test(html), `${page} should show data source notice`);
+  assert(!/class="source-note"/.test(html), `${page} should not show the old source note overlay`);
 }
 
 const home = read('index.html');
@@ -38,6 +38,7 @@ assert(/href="\.\/index2"/.test(home), 'homepage should link to multi-scale fore
 assert(/href="\.\/index3"/.test(home), 'homepage should link to sunlight page');
 assert(/tool-tile/.test(home), 'homepage should use tile entry layout');
 assert(!/<script[\s>]/.test(home), 'homepage should stay lightweight without business scripts');
+assert(!/GitHub Pages 静态部署|Open-Meteo 数据源|机场库缓存兜底/.test(home), 'homepage should not show deployment/source status pills');
 
 assert(/typeof echarts === 'undefined'/.test(scriptOf(read('index1.html'), 'index1.html')), 'index1.html should check ECharts');
 assert(/typeof echarts === 'undefined'/.test(scriptOf(read('index2.html'), 'index2.html')), 'index2.html should check ECharts');
@@ -45,12 +46,13 @@ assert(/window\.SunCalc/.test(scriptOf(read('index3.html'), 'index3.html')), 'in
 
 const index3 = read('index3.html');
 assert(index3.indexOf('id="calendarRoot"') < index3.indexOf('class="info-panels"'), 'index3 should place explanation panels below the calendar');
+assert(/算法与来源/.test(index3), 'index3 should merge algorithm and source explanation');
+assert(!/sourceInfoPanel/.test(index3), 'index3 should not show a separate source panel');
+assert(!/数据来源：Open-Meteo \/ mwgg Airports \/ ECharts/.test(read('index1.html') + read('index2.html') + index3), 'tool pages should not show the old source note text');
 
 const index2 = read('index2.html');
-assert(/id="sourceStatusPanel"/.test(index2), 'index2 should include source status panel');
-for (const key of ['hourly', 'ensemble', 'weekly', 'monthly', 'climate']) {
-  assert(new RegExp(`data-source-status="${key}"`).test(index2), `index2 should show ${key} source status`);
-}
+assert(!/id="sourceStatusPanel"/.test(index2), 'index2 should not show source status chips');
+assert(!/data-source-status/.test(index2), 'index2 should not render per-source status chips');
 
 const readme = read('README.md');
 assert(/稳定性优化说明/.test(readme), 'README should document stability improvements');

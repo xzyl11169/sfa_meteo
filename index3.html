@@ -7,18 +7,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <style>
         :root {
-            --sf-red: #D7000F;
-            --sf-dark: #2A2A2A;
-            --bg-body: #f4f5f7;
+            --sf-red: #38bdf8;
+            --sf-dark: #f8fafc;
+            --bg-body: #020617;
             --surface: #ffffff;
-            --border: #e2e8f0;
-            --text-main: #1a202c;
-            --text-sub: #718096;
+            --dark-panel: #0f172a;
+            --dark-panel-2: #111827;
+            --border: #d9e2ec;
+            --dark-border: #334155;
+            --text-main: #e5edf7;
+            --text-sub: #94a3b8;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
-            background-color: var(--bg-body);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(56, 189, 248, 0.12), transparent 30%),
+                linear-gradient(135deg, #020617 0%, #0f172a 52%, #111827 100%);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
@@ -37,15 +42,16 @@
 
         /* --- 极简单行表头 (Toolbar Style) --- */
         .toolbar-header {
-            background: var(--surface);
+            background: var(--dark-panel);
             height: 60px; /* 固定高度 */
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.24);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            border-left: 4px solid var(--sf-red); /* 左侧红条装饰 */
+            border: 1px solid var(--dark-border);
+            border-left: 4px solid var(--sf-red);
             white-space: nowrap; /* 防止换行 */
         }
 
@@ -60,7 +66,7 @@
             margin: 0;
             font-size: 18px;
             font-weight: 700;
-            color: var(--sf-dark);
+            color: #f8fafc;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -71,8 +77,8 @@
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 4px;
-            background: #eee;
-            color: #666;
+            background: #1e293b;
+            color: #cbd5e1;
             font-weight: normal;
         }
         .status-badge.ok { background: #def7ec; color: #03543f; }
@@ -92,8 +98,8 @@
             display: flex;
             align-items: center;
             gap: 0; /* 紧凑连接 */
-            background: #fff;
-            border: 1px solid #e2e8f0;
+            background: #020617;
+            border: 1px solid #475569;
             border-radius: 6px;
             overflow: hidden;
             transition: border-color 0.2s;
@@ -111,11 +117,12 @@
             font-size: 14px;
             outline: none;
             background: transparent;
+            color: #f8fafc;
         }
 
         .input-icao {
             width: 80px;
-            border-right: 1px solid #e2e8f0;
+            border-right: 1px solid #334155;
             font-weight: bold;
             text-transform: uppercase;
             font-family: monospace;
@@ -128,7 +135,7 @@
 
         .btn-search {
             background: var(--sf-red);
-            color: white;
+            color: #082f49;
             border: none;
             height: 32px;
             padding: 0 16px;
@@ -138,8 +145,8 @@
             border-radius: 0 5px 5px 0; /* 只有右侧圆角 */
             margin-left: -1px; /* 修正边框重叠 */
         }
-        .btn-search:hover { background: #b9000d; }
-        .btn-search:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-search:hover { filter: brightness(1.08); }
+        .btn-search:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
 
         /* 右侧：视图控制 */
         .header-right {
@@ -151,7 +158,8 @@
         /* 切换开关 */
         .toggle-switch {
             display: flex;
-            background: #e2e8f0;
+            background: #020617;
+            border: 1px solid #334155;
             padding: 2px;
             border-radius: 4px;
         }
@@ -162,20 +170,20 @@
             font-weight: 600;
             border-radius: 3px;
             cursor: pointer;
-            color: #64748b;
+            color: #94a3b8;
             transition: 0.2s;
         }
 
         .toggle-item.active {
-            background: white;
-            color: var(--sf-dark);
+            background: #38bdf8;
+            color: #082f49;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .btn-icon {
-            background: white;
-            border: 1px solid #e2e8f0;
-            color: #4a5568;
+            background: #020617;
+            border: 1px solid #475569;
+            color: #cbd5e1;
             height: 32px;
             padding: 0 12px;
             border-radius: 4px;
@@ -185,7 +193,7 @@
             align-items: center;
             gap: 4px;
         }
-        .btn-icon:hover { background: #f7fafc; border-color: #cbd5e0; }
+        .btn-icon:hover { background: #1e293b; border-color: #38bdf8; color: #f8fafc; }
 
         /* --- 结果信息条 (Banner) --- */
         .info-banner {
@@ -211,8 +219,8 @@
         }
 
         .info-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: var(--dark-panel);
+            border: 1px solid var(--dark-border);
             border-radius: 6px;
             overflow: hidden;
         }
@@ -221,7 +229,7 @@
             width: 100%;
             border: none;
             background: transparent;
-            color: var(--text-main);
+            color: #e5edf7;
             padding: 10px 14px;
             display: flex;
             align-items: center;
@@ -232,12 +240,12 @@
             font-family: inherit;
         }
 
-        .info-panel-toggle:hover { background: #f8fafc; }
+        .info-panel-toggle:hover { background: #1e293b; }
 
         .info-panel-title {
             font-size: 13px;
             font-weight: 700;
-            color: var(--sf-dark);
+            color: #f8fafc;
         }
 
         .info-panel-summary {
@@ -265,15 +273,15 @@
             display: none;
             border-top: 1px solid var(--border);
             padding: 2px 14px 10px;
-            color: #4a5568;
+            color: #cbd5e1;
             font-size: 12px;
         }
 
         .info-panel.expanded .info-panel-body { display: block; }
 
         .info-panel.expanded .info-panel-icon {
-            background: #f8fafc;
-            color: var(--sf-red);
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
         }
 
         .info-panel-body ul {
@@ -427,12 +435,12 @@
 
     <div id="calendarRoot" class="calendar-container"></div>
 
-    <section class="info-panels" aria-label="算法、更新和数据来源说明">
+    <section class="info-panels" aria-label="算法、更新说明">
         <article id="algorithmInfoPanel" class="info-panel">
             <button class="info-panel-toggle" type="button" onclick="toggleInfoPanel('algorithmInfoPanel')" aria-expanded="false" aria-controls="algorithmInfoBody">
                 <span>
-                    <span class="info-panel-title">算法说明</span>
-                    <span class="info-panel-summary">基于机场经纬度、时区和可用标高计算理论日出日落时间。</span>
+                    <span class="info-panel-title">算法与来源</span>
+                    <span class="info-panel-summary">基于机场经纬度、时区、可用标高和公开机场库计算理论日出日落。</span>
                 </span>
                 <span class="info-panel-icon" aria-hidden="true">+</span>
             </button>
@@ -442,7 +450,8 @@
                     <li>日期按机场所在时区解释，避免跨时区机场日期偏差。</li>
                     <li>若机场数据库提供标高字段，会进行近似高度修正。</li>
                     <li>未校正周边山体、建筑物遮挡和实时大气折射。</li>
-                    <li>结果适合作为值班参考和日照时间表，不作为精密天文或运行标准依据。</li>
+                    <li>机场基础数据来自 mwgg/Airports，日出日落计算使用 SunCalc。</li>
+                    <li>结果为理论计算，仅供值班参考，不作为精密天文或运行标准依据。</li>
                 </ul>
             </div>
         </article>
@@ -466,22 +475,6 @@
             </div>
         </article>
 
-        <article id="sourceInfoPanel" class="info-panel">
-            <button class="info-panel-toggle" type="button" onclick="toggleInfoPanel('sourceInfoPanel')" aria-expanded="false" aria-controls="sourceInfoBody">
-                <span>
-                    <span class="info-panel-title">数据来源</span>
-                    <span class="info-panel-summary">机场库、日出日落算法与页面依赖均来自公开数据和开源组件。</span>
-                </span>
-                <span class="info-panel-icon" aria-hidden="true">+</span>
-            </button>
-            <div id="sourceInfoBody" class="info-panel-body">
-                <ul>
-                    <li>机场基础数据：mwgg/Airports。</li>
-                    <li>日出日落计算：SunCalc。</li>
-                    <li>结果为理论计算，仅供值班参考。</li>
-                </ul>
-            </div>
-        </article>
     </section>
 
 </div>

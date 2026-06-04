@@ -71,22 +71,6 @@
             font-size: 13px;
         }
 
-        .status-strip {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .status-pill {
-            border: 1px solid var(--line);
-            color: #cbd5e1;
-            border-radius: 999px;
-            padding: 5px 10px;
-            font-size: 12px;
-            background: rgba(2, 6, 23, 0.35);
-        }
-
         .hero-main {
             border: 1px solid var(--line);
             border-radius: 8px;
@@ -215,7 +199,6 @@
         @media (max-width: 900px) {
             .tile-grid { grid-template-columns: 1fr; }
             .topbar { align-items: flex-start; flex-direction: column; }
-            .status-strip { justify-content: flex-start; }
         }
 
         @media (max-width: 560px) {
@@ -232,11 +215,6 @@
             <div class="brand">
                 <div class="brand-mark">SF AOC METEO</div>
                 <div class="brand-sub">机场气象业务工具站</div>
-            </div>
-            <div class="status-strip" aria-label="系统状态">
-                <span class="status-pill">GitHub Pages 静态部署</span>
-                <span class="status-pill">Open-Meteo 数据源</span>
-                <span class="status-pill">机场库缓存兜底</span>
             </div>
         </header>
 

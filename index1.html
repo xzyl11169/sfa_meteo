@@ -119,20 +119,6 @@
             padding: 15px; border-radius: 6px; margin-top: 10px; font-family: monospace;
             max-width: 80%; display: none;
         }
-        .source-note {
-            position: absolute;
-            left: 16px;
-            bottom: 14px;
-            z-index: 10;
-            color: #64748b;
-            font-size: 11px;
-            background: rgba(15, 23, 42, 0.78);
-            border: 1px solid rgba(100, 116, 139, 0.28);
-            border-radius: 4px;
-            padding: 4px 8px;
-        }
-        .source-note a { color: #38bdf8; text-decoration: none; }
-        .source-note a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -156,7 +142,6 @@
 
     <div class="main-view">
         <div id="chart"></div>
-        <div class="source-note">数据来源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> / <a href="https://github.com/mwgg/Airports" target="_blank" rel="noopener">mwgg Airports</a> / <a href="https://echarts.apache.org/" target="_blank" rel="noopener">ECharts</a>；数值预报结果仅供值班参考。</div>
         <div id="loader">
             <div class="spinner" id="spin-icon"></div>
             <div style="color: #10b981; font-weight: bold;" id="load-text">处理中...</div>
