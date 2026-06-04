@@ -53,6 +53,10 @@ assert(!/数据来源：Open-Meteo \/ mwgg Airports \/ ECharts/.test(read('index
 const index2 = read('index2.html');
 assert(!/id="sourceStatusPanel"/.test(index2), 'index2 should not show source status chips');
 assert(!/data-source-status/.test(index2), 'index2 should not render per-source status chips');
+assert(/id="btn-visibility"/.test(index2), 'index2 should include a visibility forecast tab');
+assert(/hourly: 'visibility'/.test(index2), 'index2 should request visibility data');
+assert(/function\s+renderVisibilityChart\s*\(/.test(index2), 'index2 should render visibility as a separate forecast');
+assert(/24\.1 km/.test(index2), 'index2 should guard against capped 24.1 km visibility values');
 
 const readme = read('README.md');
 assert(/稳定性优化说明/.test(readme), 'README should document stability improvements');

@@ -222,6 +222,7 @@
 
         <div class="view-toggles">
             <button class="view-btn active" id="btn-hourly" onclick="switchView('hourly')" title="ECMWF Hourly (0-7天)">精细化预测</button>
+            <button class="view-btn" id="btn-visibility" onclick="switchView('visibility')" title="Open-Meteo Visibility (0-7天)">能见度预报</button>
             <button class="view-btn" id="btn-ensemble" onclick="switchView('ensemble')" title="IFS ENS (0-15天概率)">集合预报</button>
             <button class="view-btn" id="btn-weekly" onclick="switchView('weekly')" title="EC46 (15-45天)">延伸期预报</button>
             <button class="view-btn" id="btn-monthly" onclick="switchView('monthly')" title="SEAS5 (1-6个月)">季节预报</button>
@@ -285,6 +286,7 @@
 
         const VIEW_NAMES = {
             'hourly': '精细化预测 (逐小时)',
+            'visibility': '能见度预报 (逐小时)',
             'ensemble': '集合预报 (IFS ENS)',
             'weekly': '延伸期预报 (EC46)',
             'monthly': '季节预报 (SEAS5)',
@@ -312,7 +314,7 @@
         let isLoadingAborted = false;
 
         const DATA_CACHE = {
-            hourly: null, ensemble: null, weekly: null, monthly: null, climate: null
+            hourly: null, visibility: null, ensemble: null, weekly: null, monthly: null, climate: null
         };
 
         let CURRENT_LOC = null;
@@ -625,6 +627,7 @@
 
                 const tasks = [
                     { key: 'hourly', label: '精细化预测', url: 'https://api.open-meteo.com/v1/ecmwf', params: { hourly: 'temperature_2m,dewpoint_2m,precipitation,rain,snowfall,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m,pressure_msl', forecast_days: 7 } },
+                    { key: 'visibility', label: '能见度预报', url: 'https://api.open-meteo.com/v1/forecast', params: { hourly: 'visibility', forecast_days: 7 } },
                     { key: 'ensemble', label: '集合预报', url: 'https://ensemble-api.open-meteo.com/v1/ensemble', params: { models: 'ecmwf_ifs025', daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum,wind_speed_10m_max,pressure_msl_mean', forecast_days: 16 } },
                     { key: 'weekly', label: '延伸期预报', url: 'https://seasonal-api.open-meteo.com/v1/seasonal', params: { daily: 'temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,rain_sum,snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,pressure_msl_mean', forecast_days: 46 } },
                     { key: 'monthly', label: '季节预报', url: 'https://seasonal-api.open-meteo.com/v1/seasonal', params: { daily: 'temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,rain_sum,snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,pressure_msl_mean', forecast_days: 180 } },
@@ -651,12 +654,13 @@
 
                         let mName = "ECMWF";
                         if (task.key === 'hourly') mName = "ECMWF IFS (Hourly)";
+                        if (task.key === 'visibility') mName = "Open-Meteo Forecast (Visibility)";
                         if (task.key === 'climate') mName = "CMIP6 EC-Earth3P";
                         if (task.key === 'ensemble') mName = "ECMWF ENS (51 Members)";
                         if (task.key === 'weekly') mName = "ECMWF EC46 (Weekly)";
                         if (task.key === 'monthly') mName = "ECMWF SEAS5 (Monthly)";
 
-                        if (task.key === 'hourly') {
+                        if (task.key === 'hourly' || task.key === 'visibility') {
                             DATA_CACHE[task.key] = { data: data, modelName: mName };
                         } else if (task.key === 'ensemble') {
                             DATA_CACHE[task.key] = { data: processData(data, 'ensemble'), modelName: mName };
@@ -719,6 +723,8 @@
 
             if (view === 'hourly') {
                 renderHourlyChart(cache.data, CURRENT_CODE, CURRENT_LOC.name, cache.modelName);
+            } else if (view === 'visibility') {
+                renderVisibilityChart(cache.data, CURRENT_CODE, CURRENT_LOC.name, cache.modelName);
             } else {
                 renderChart(cache.data, CURRENT_CODE, CURRENT_LOC.name, cache.modelName);
             }
@@ -758,6 +764,8 @@
                 return refDate.toISOString().slice(0, 10);
             } else if (view === 'climate') {
                 return "1950-2050 (CMIP6 Projections)";
+            } else if (view === 'visibility') {
+                return `${dateStr} ${now.getUTCHours()}:00Z`;
             } else if (view === 'hourly') {
                 return `${dateStr} ${now.getUTCHours()}:00Z`;
             } else {
@@ -1087,6 +1095,183 @@ function processData(data, view) {
                 if (newInterval !== currentHourlyZoomInterval) {
                     currentHourlyZoomInterval = newInterval;
                     myChart.setOption({ xAxis: [ { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } } ] });
+                }
+            });
+        }
+
+        function renderVisibilityChart(data, code, name, modelInfo) {
+            const dom = document.getElementById('chart');
+            if (!myChart) {
+                myChart = echarts.init(dom, 'dark');
+                window.addEventListener('resize', () => myChart.resize());
+            }
+            myChart.clear();
+
+            const h = data && data.hourly;
+            if (!h || !h.time || !Array.isArray(h.visibility)) return;
+
+            const rawValues = h.visibility;
+            const validMeters = rawValues.filter(v => Number.isFinite(v));
+            const cappedCount = validMeters.filter(v => Math.abs(v - 24140) <= 20).length;
+            const allCapped = validMeters.length > 0 && cappedCount === validMeters.length;
+
+            if (!validMeters.length || allCapped) {
+                const reason = allCapped
+                    ? "能见度数据全部为 24.1 km 附近的封顶值，暂不作为有效预报展示。"
+                    : "当前接口未返回有效能见度数据。";
+                myChart.setOption({
+                    backgroundColor: '#1e293b',
+                    title: {
+                        text: `${code}-${name} 能见度预报`,
+                        left: 20,
+                        top: 30,
+                        textStyle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+                        subtext: reason,
+                        subtextStyle: { color: '#fbbf24', fontSize: 13, lineHeight: 20 }
+                    },
+                    graphic: [{
+                        type: 'text',
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            text: reason,
+                            fill: '#fbbf24',
+                            fontSize: 16,
+                            fontWeight: 700,
+                            textAlign: 'center'
+                        }
+                    }]
+                }, true);
+                return;
+            }
+
+            const updateStr = getModelUpdateTime('visibility');
+            const initStr = `${modelInfo} | Update: ${updateStr}`;
+            const visibilityKm = rawValues.map(v => Number.isFinite(v) ? Number((v / 1000).toFixed(1)) : null);
+            const times = h.time.map(t => {
+                const d = new Date(t * 1000);
+                return String(d.getUTCHours()).padStart(2, '0') + 'Z';
+            });
+
+            const validKm = visibilityKm.filter(v => Number.isFinite(v));
+            const axis = getNiceAxisRange(validKm, { includeZeroMin: true, floorZero: true, paddingRatio: 0.12 });
+            const cappedNotice = cappedCount > 0
+                ? `；其中 ${cappedCount} 个时次达到 24.1 km 上限`
+                : '';
+
+            const nowTs = Date.now() / 1000;
+            const nowIdx = h.time.findIndex(t => t >= nowTs);
+            const nowLine = {
+                symbol: ['none', 'none'],
+                label: { show: false },
+                lineStyle: { color: '#fff', type: 'dashed', width: 2, opacity: 0.6 },
+                data: nowIdx !== -1 ? [{ xAxis: nowIdx }] : [],
+                z: 100
+            };
+
+            const commonAxisFormatter = function(value, index) {
+                if (!h || !h.time || h.time[index] === undefined) return value;
+                const d = new Date(h.time[index] * 1000);
+                const hour = d.getUTCHours();
+                if (hour === 0) {
+                    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getUTCDate()).padStart(2, '0');
+                    return `${value}\n${mm}-${dd}`;
+                }
+                return `${value}\n`;
+            };
+
+            myChart.setOption({
+                backgroundColor: '#1e293b',
+                title: {
+                    text: `{name|${code}-${name}} {tag|能见度预报} {info|${initStr}${cappedNotice}}`,
+                    left: 20,
+                    top: 30,
+                    textStyle: { rich: {
+                        name: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+                        tag: { color: '#0f172a', backgroundColor: '#22d3ee', borderRadius: 3, padding: [2, 6], fontSize: 12, fontWeight: 'bold' },
+                        info: { color: '#94a3b8', fontSize: 12, padding: [4, 0, 0, 10] }
+                    }}
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross', label: { backgroundColor: '#333' } },
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    borderColor: '#475569',
+                    formatter: function(params) {
+                        if (!params[0]) return '';
+                        const i = params[0].dataIndex;
+                        const d = new Date(h.time[i] * 1000);
+                        const yyyy = d.getUTCFullYear();
+                        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getUTCDate()).padStart(2, '0');
+                        const hh = String(d.getUTCHours()).padStart(2, '0');
+                        const value = params[0].value;
+                        const capText = rawValues[i] && Math.abs(rawValues[i] - 24140) <= 20 ? '（接近接口上限）' : '';
+                        return `<div style="border-bottom:1px solid #555;padding-bottom:5px;margin-bottom:5px;font-weight:bold">${yyyy}-${mm}-${dd} ${hh}Z</div>
+                            <div style="display:flex;justify-content:space-between;gap:20px;color:#fff"><span>${params[0].marker} 能见度</span><span style="font-weight:bold;font-family:monospace">${value ?? '--'} km ${capText}</span></div>`;
+                    }
+                },
+                legend: [{
+                    type: 'scroll',
+                    orient: 'horizontal',
+                    top: '8%',
+                    right: 50,
+                    data: [{ name: '能见度', itemStyle: { color: '#22d3ee' } }],
+                    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    padding: [2, 6],
+                    textStyle: { color: '#cbd5e1', fontSize: 11 }
+                }],
+                grid: [{ top: '18%', left: 65, right: 55, bottom: 70 }],
+                xAxis: [{
+                    type: 'category',
+                    data: times,
+                    axisLine: { lineStyle: { color: '#475569' } },
+                    axisTick: { show: true },
+                    axisLabel: { color: '#cbd5e1', fontSize: 11, interval: currentHourlyZoomInterval, lineHeight: 12, formatter: commonAxisFormatter }
+                }],
+                yAxis: [{
+                    type: 'value',
+                    name: '公里',
+                    min: axis.min,
+                    max: axis.max,
+                    splitLine: { lineStyle: { type: 'dashed', color: '#334155' } },
+                    axisLabel: { color: '#22d3ee' },
+                    nameTextStyle: { color: '#22d3ee', align: 'left' },
+                    scale: false
+                }],
+                dataZoom: [
+                    { type: 'slider', xAxisIndex: [0], bottom: 20, right: 60, left: 50, height: 25, borderColor:'transparent', fillerColor:'rgba(34,211,238,0.2)', start: savedZoomStart, end: savedZoomEnd }
+                ],
+                series: [{
+                    name: '能见度',
+                    type: 'line',
+                    data: visibilityKm,
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { color: '#22d3ee', width: 2 },
+                    itemStyle: { color: '#22d3ee' },
+                    areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(34,211,238,0.28)'}, {offset:1, color:'rgba(34,211,238,0)'}]) },
+                    markLine: nowLine
+                }]
+            }, true);
+
+            myChart.off('dataZoom');
+            myChart.on('dataZoom', function () {
+                const opt = myChart.getOption();
+                if (opt.dataZoom && opt.dataZoom[0]) {
+                    const z = opt.dataZoom[0];
+                    if (isZoomLocked) { savedZoomStart = z.start; savedZoomEnd = z.end; }
+                }
+                const totalHours = h.time.length;
+                const visibleHours = (opt.dataZoom[0].end - opt.dataZoom[0].start) / 100 * totalHours;
+                const newInterval = visibleHours <= 72 ? 0 : 2;
+                if (newInterval !== currentHourlyZoomInterval) {
+                    currentHourlyZoomInterval = newInterval;
+                    myChart.setOption({ xAxis: [{ axisLabel: { interval: newInterval } }] });
                 }
             });
         }
