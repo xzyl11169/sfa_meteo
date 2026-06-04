@@ -32,6 +32,7 @@ for (const page of toolPages) {
 
 const home = read('index.html');
 assert(/SF AOC Meteo 气象业务工具站/.test(home), 'homepage should show the site title');
+assert(/气象业务工具入口/.test(home), 'homepage should use concise entry heading');
 assert(/href="\.\/index1"/.test(home), 'homepage should link to refined forecast page');
 assert(/href="\.\/index2"/.test(home), 'homepage should link to multi-scale forecast page');
 assert(/href="\.\/index3"/.test(home), 'homepage should link to sunlight page');
@@ -41,6 +42,9 @@ assert(!/<script[\s>]/.test(home), 'homepage should stay lightweight without bus
 assert(/typeof echarts === 'undefined'/.test(scriptOf(read('index1.html'), 'index1.html')), 'index1.html should check ECharts');
 assert(/typeof echarts === 'undefined'/.test(scriptOf(read('index2.html'), 'index2.html')), 'index2.html should check ECharts');
 assert(/window\.SunCalc/.test(scriptOf(read('index3.html'), 'index3.html')), 'index3.html should check SunCalc');
+
+const index3 = read('index3.html');
+assert(index3.indexOf('id="calendarRoot"') < index3.indexOf('class="info-panels"'), 'index3 should place explanation panels below the calendar');
 
 const index2 = read('index2.html');
 assert(/id="sourceStatusPanel"/.test(index2), 'index2 should include source status panel');

@@ -87,15 +87,7 @@
             background: rgba(2, 6, 23, 0.35);
         }
 
-        .hero {
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
-            gap: 18px;
-            align-items: stretch;
-        }
-
-        .hero-main,
-        .notice-panel {
+        .hero-main {
             border: 1px solid var(--line);
             border-radius: 8px;
             background: var(--panel);
@@ -105,11 +97,11 @@
 
         .hero-main {
             padding: 30px;
-            min-height: 210px;
+            min-height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 14px;
+            gap: 10px;
         }
 
         h1 {
@@ -121,32 +113,10 @@
 
         .hero-copy {
             margin: 0;
-            max-width: 760px;
+            max-width: 620px;
             color: #cbd5e1;
-            font-size: 15px;
-            line-height: 1.8;
-        }
-
-        .notice-panel {
-            padding: 22px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 14px;
-        }
-
-        .notice-title {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 800;
-        }
-
-        .notice-list {
-            margin: 0;
-            padding-left: 18px;
-            color: #cbd5e1;
-            font-size: 13px;
-            line-height: 1.8;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .tile-grid {
@@ -162,8 +132,8 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 210px;
-            padding: 22px;
+            min-height: 170px;
+            padding: 20px;
             color: var(--text);
             text-decoration: none;
             border-radius: 8px;
@@ -202,7 +172,7 @@
         }
 
         .tile-title {
-            margin: 18px 0 8px;
+            margin: 16px 0 6px;
             font-size: 24px;
             font-weight: 800;
             letter-spacing: 0;
@@ -211,12 +181,12 @@
         .tile-desc {
             margin: 0;
             color: rgba(255, 255, 255, 0.82);
-            font-size: 14px;
-            line-height: 1.7;
+            font-size: 13px;
+            line-height: 1.55;
         }
 
         .tile-meta {
-            margin-top: 20px;
+            margin-top: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -243,7 +213,6 @@
         }
 
         @media (max-width: 900px) {
-            .hero { grid-template-columns: 1fr; }
             .tile-grid { grid-template-columns: 1fr; }
             .topbar { align-items: flex-start; flex-direction: column; }
             .status-strip { justify-content: flex-start; }
@@ -251,7 +220,7 @@
 
         @media (max-width: 560px) {
             .site-shell { width: min(100vw - 20px, 1180px); padding-top: 12px; }
-            .hero-main, .notice-panel, .tool-tile { padding: 18px; }
+            .hero-main, .tool-tile { padding: 18px; }
             .brand-mark { font-size: 17px; }
             .tile-title { font-size: 21px; }
         }
@@ -271,19 +240,9 @@
             </div>
         </header>
 
-        <section class="hero" aria-label="网站说明">
-            <div class="hero-main">
-                <h1>气象值班与机场趋势研判入口</h1>
-                <p class="hero-copy">面向机场气象值班场景，集中访问精细化预报、多尺度趋势研判和日照参考工具。页面保留纯静态架构，适合在浏览器中快速打开、查询和对比。</p>
-            </div>
-            <aside class="notice-panel">
-                <p class="notice-title">使用边界</p>
-                <ul class="notice-list">
-                    <li>数值预报和理论计算结果仅供值班参考。</li>
-                    <li>第三方数据源异常时，页面会显示明确状态。</li>
-                    <li>不作为放行、签派或运行标准的唯一依据。</li>
-                </ul>
-            </aside>
+        <section class="hero-main" aria-label="网站说明">
+            <h1>气象业务工具入口</h1>
+            <p class="hero-copy">选择一个工具开始查询。结果仅供气象值班、趋势研判和运行参考。</p>
         </section>
 
         <section class="tile-grid" aria-label="工具入口">
@@ -291,7 +250,7 @@
                 <div>
                     <div class="tile-kicker">0-7D ECMWF</div>
                     <h2 class="tile-title">精细化机场预报</h2>
-                    <p class="tile-desc">查看逐小时温度、露点、降水、风、云量、湿度和气压，适合短期值班快速研判。</p>
+                    <p class="tile-desc">未来 7 天逐小时机场天气要素。</p>
                 </div>
                 <div class="tile-meta"><span>进入工作台</span><span class="tile-arrow">›</span></div>
             </a>
@@ -300,7 +259,7 @@
                 <div>
                     <div class="tile-kicker">Multi-Scale</div>
                     <h2 class="tile-title">多尺度趋势研判</h2>
-                    <p class="tile-desc">汇总精细化、集合、延伸期、季节和气候产品，辅助判断不同时间尺度的趋势和不确定性。</p>
+                    <p class="tile-desc">集合、延伸期、季节和气候参考。</p>
                 </div>
                 <div class="tile-meta"><span>查看趋势</span><span class="tile-arrow">›</span></div>
             </a>
@@ -309,7 +268,7 @@
                 <div>
                     <div class="tile-kicker">Sunlight</div>
                     <h2 class="tile-title">日照与昼夜节律</h2>
-                    <p class="tile-desc">按机场当地日期查看全年日出日落、UTC/LT 切换和昼长变化，适合排班和日照参考。</p>
+                    <p class="tile-desc">全年日出日落、昼长和 UTC/LT。</p>
                 </div>
                 <div class="tile-meta"><span>打开日照表</span><span class="tile-arrow">›</span></div>
             </a>
