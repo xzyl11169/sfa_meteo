@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SF AOC Meteo客观预报</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
@@ -119,6 +119,20 @@
             padding: 15px; border-radius: 6px; margin-top: 10px; font-family: monospace;
             max-width: 80%; display: none;
         }
+        .source-note {
+            position: absolute;
+            left: 16px;
+            bottom: 14px;
+            z-index: 10;
+            color: #64748b;
+            font-size: 11px;
+            background: rgba(15, 23, 42, 0.78);
+            border: 1px solid rgba(100, 116, 139, 0.28);
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+        .source-note a { color: #38bdf8; text-decoration: none; }
+        .source-note a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -142,6 +156,7 @@
     
     <div class="main-view">
         <div id="chart"></div>
+        <div class="source-note">数据来源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> / <a href="https://github.com/mwgg/Airports" target="_blank" rel="noopener">mwgg Airports</a> / <a href="https://echarts.apache.org/" target="_blank" rel="noopener">ECharts</a>；数值预报结果仅供值班参考。</div>
         <div id="loader">
             <div class="spinner" id="spin-icon"></div>
             <div style="color: #10b981; font-weight: bold;" id="load-text">处理中...</div>
@@ -184,7 +199,13 @@
             99: { cn: "雷暴伴大冰雹 (TSGR)", safe: false, danger: true }
         };
 
+        const DB_URL = "https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json";
+        const DB_CACHE_KEY = "airport_db_cache_v1";
+        const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+        const DATABASE_TIMEOUT_MS = 8000;
+        const API_TIMEOUT_MS = 15000;
         let EXTERNAL_DB = null;
+        let AIRPORT_DB_STATUS = "idle";
         let myChart = null;
         let currentZoomInterval = 2; 
         
@@ -237,6 +258,67 @@
             }
         }
 
+        async function fetchJsonWithTimeout(url, label, timeoutMs = API_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(url, { signal: controller.signal });
+                let data = null;
+                try { data = await res.json(); } catch (e) {}
+                if (!res.ok) {
+                    const detail = data && (data.reason || data.error || data.message);
+                    throw new Error(`${label} 请求失败: HTTP ${res.status}${detail ? ` - ${detail}` : ''}`);
+                }
+                if (data && data.error) {
+                    throw new Error(`${label} 请求失败: ${data.reason || data.message || data.error}`);
+                }
+                return data;
+            } catch (e) {
+                if (e.name === 'AbortError') throw new Error(`${label} 请求超时`);
+                throw e;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        function readAirportCache() {
+            try {
+                const raw = localStorage.getItem(DB_CACHE_KEY);
+                if (!raw) return null;
+                const cache = JSON.parse(raw);
+                if (!cache || !cache.data || !cache.savedAt) return null;
+                if (Date.now() - cache.savedAt > DB_CACHE_TTL_MS) return null;
+                return cache.data;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function writeAirportCache(data) {
+            try {
+                localStorage.setItem(DB_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+            } catch (e) {}
+        }
+
+        async function loadAirportDatabase() {
+            if (EXTERNAL_DB) return EXTERNAL_DB;
+            const cached = readAirportCache();
+            try {
+                EXTERNAL_DB = await fetchJsonWithTimeout(DB_URL, "机场数据库", DATABASE_TIMEOUT_MS);
+                writeAirportCache(EXTERNAL_DB);
+                AIRPORT_DB_STATUS = "online";
+                return EXTERNAL_DB;
+            } catch (e) {
+                if (cached) {
+                    EXTERNAL_DB = cached;
+                    AIRPORT_DB_STATUS = "cache";
+                    return EXTERNAL_DB;
+                }
+                AIRPORT_DB_STATUS = "error";
+                throw new Error(`机场数据库不可用：${e.message}`);
+            }
+        }
+
         function getWindDirText(deg) {
             deg = deg % 360;
             if (deg < 0) deg += 360;
@@ -259,21 +341,13 @@
 
             if (AIRPORTS[icao]) return AIRPORTS[icao];
 
-            if (!EXTERNAL_DB) {
-                setLoader(true, "加载全球库...");
-                try {
-                    const res = await fetch('https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json');
-                    if (!res.ok) throw new Error("加载失败");
-                    EXTERNAL_DB = await res.json();
-                } catch (e) {
-                    console.warn("外部库加载失败");
-                }
-            }
+            await loadAirportDatabase();
             if (EXTERNAL_DB && EXTERNAL_DB[icao]) {
                 const d = EXTERNAL_DB[icao];
                 return { lat: d.lat, lon: d.lon, name: d.name };
             }
-            throw new Error(`未找到代码 [${icao}]`);
+            const suffix = AIRPORT_DB_STATUS === "cache" ? "（当前使用本地缓存）" : "";
+            throw new Error(`未找到机场代码 [${icao}]${suffix}`);
         }
 
         async function query() {
@@ -305,9 +379,7 @@
                     timeformat: 'unixtime' 
                 });
 
-                const res = await fetch(`https://api.open-meteo.com/v1/ecmwf?${params.toString()}`);
-                if (!res.ok) throw new Error(`API Error: ${res.status}`);
-                const data = await res.json();
+                const data = await fetchJsonWithTimeout(`https://api.open-meteo.com/v1/ecmwf?${params.toString()}`, "ECMWF数据");
 
                 renderChart(data, code, loc.name);
                 setLoader(false);

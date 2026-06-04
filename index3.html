@@ -420,7 +420,7 @@
         </div>
     </div>
 
-    <section class="info-panels" aria-label="算法和更新说明">
+    <section class="info-panels" aria-label="算法、更新和数据来源说明">
         <article id="algorithmInfoPanel" class="info-panel">
             <button class="info-panel-toggle" type="button" onclick="toggleInfoPanel('algorithmInfoPanel')" aria-expanded="false" aria-controls="algorithmInfoBody">
                 <span>
@@ -455,6 +455,23 @@
                     <li>修复全球机场日期按电脑本地时区计算的问题。</li>
                     <li>增加年份校验和 SunCalc 依赖加载检查。</li>
                     <li>UTC/LT 切换后保持今日定位。</li>
+                </ul>
+            </div>
+        </article>
+
+        <article id="sourceInfoPanel" class="info-panel">
+            <button class="info-panel-toggle" type="button" onclick="toggleInfoPanel('sourceInfoPanel')" aria-expanded="false" aria-controls="sourceInfoBody">
+                <span>
+                    <span class="info-panel-title">数据来源</span>
+                    <span class="info-panel-summary">机场库、日出日落算法与页面依赖均来自公开数据和开源组件。</span>
+                </span>
+                <span class="info-panel-icon" aria-hidden="true">+</span>
+            </button>
+            <div id="sourceInfoBody" class="info-panel-body">
+                <ul>
+                    <li>机场基础数据：mwgg/Airports。</li>
+                    <li>日出日落计算：SunCalc。</li>
+                    <li>结果为理论计算，仅供值班参考。</li>
                 </ul>
             </div>
         </article>
@@ -499,14 +516,10 @@
         const btn = document.getElementById('searchBtn');
         const cached = readAirportCache();
         const startedAt = performance.now();
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), DATABASE_TIMEOUT_MS);
         statusBadge.innerText = "DATABASE LOADING";
 
         try {
-            const response = await fetch(DB_URL, { cache: 'no-store', signal: controller.signal });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
+            const data = await fetchJsonWithTimeout(DB_URL, "机场数据库", DATABASE_TIMEOUT_MS);
             AIRPORT_DB = data;
             writeAirportCache(data);
             const elapsed = formatElapsed(startedAt);
@@ -534,13 +547,29 @@
             statusBadge.className = 'status-badge error';
             btn.disabled = true;
             alert("机场数据库加载失败，且本地没有可用缓存。请检查网络后刷新页面。");
-        } finally {
-            clearTimeout(timer);
         }
     }
 
     function formatElapsed(startedAt) {
         return `${((performance.now() - startedAt) / 1000).toFixed(1)}s`;
+    }
+
+    async function fetchJsonWithTimeout(url, label, timeoutMs = DATABASE_TIMEOUT_MS) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+            let data = null;
+            try { data = await response.json(); } catch (e) {}
+            if (!response.ok) throw new Error(`${label} 请求失败: HTTP ${response.status}`);
+            if (data && data.error) throw new Error(`${label} 请求失败: ${data.reason || data.message || data.error}`);
+            return data;
+        } catch (e) {
+            if (e.name === 'AbortError') throw new Error(`${label} 请求超时`);
+            throw e;
+        } finally {
+            clearTimeout(timer);
+        }
     }
 
     function readAirportCache() {

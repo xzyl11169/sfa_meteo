@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SF AOC Meteo 多维度机场预报</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
@@ -205,6 +205,42 @@
             padding: 15px; border-radius: 6px; margin-top: 10px; font-family: monospace;
             max-width: 80%; display: none;
         }
+        .source-status-panel {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            right: 18px;
+            z-index: 20;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .source-chip {
+            background: rgba(15, 23, 42, 0.82);
+            border: 1px solid rgba(100, 116, 139, 0.45);
+            color: #94a3b8;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+        }
+        .source-chip.ok { color: #86efac; border-color: rgba(34,197,94,0.45); }
+        .source-chip.error { color: #fca5a5; border-color: rgba(239,68,68,0.45); }
+        .source-chip.loading { color: #7dd3fc; border-color: rgba(56,189,248,0.45); }
+        .source-note {
+            position: absolute;
+            left: 18px;
+            bottom: 12px;
+            z-index: 20;
+            color: #64748b;
+            font-size: 11px;
+            background: rgba(15, 23, 42, 0.78);
+            border: 1px solid rgba(100, 116, 139, 0.28);
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+        .source-note a { color: #38bdf8; text-decoration: none; }
+        .source-note a:hover { text-decoration: underline; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
@@ -256,7 +292,15 @@
     </div>
     
     <div class="main-view">
+        <div id="sourceStatusPanel" class="source-status-panel">
+            <span class="source-chip" data-source-status="hourly">精细化: 待加载</span>
+            <span class="source-chip" data-source-status="ensemble">集合: 待加载</span>
+            <span class="source-chip" data-source-status="weekly">延伸期: 待加载</span>
+            <span class="source-chip" data-source-status="monthly">季节: 待加载</span>
+            <span class="source-chip" data-source-status="climate">气候: 待加载</span>
+        </div>
         <div id="chart"></div>
+        <div class="source-note">数据来源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> / <a href="https://github.com/mwgg/Airports" target="_blank" rel="noopener">mwgg Airports</a> / <a href="https://echarts.apache.org/" target="_blank" rel="noopener">ECharts</a>；数值预报结果仅供值班参考。</div>
         <div class="lock-container">
             <button class="lock-btn" id="lockBtn" onclick="toggleLock()" title="锁定/解锁 缩放">🔓</button>
         </div>
@@ -295,7 +339,13 @@
             0: { cn: "晴 (SKC/CAVOK)", safe: true }, 1: { cn: "大部晴 (FEW)", safe: true }, 2: { cn: "部分多云 (SCT)", safe: true }, 3: { cn: "阴 (BKN/OVC)", safe: true }, 45: { cn: "雾 (FG)", safe: false }, 48: { cn: "凇雾 (FZFG)", safe: false, danger: true }, 51: { cn: "轻微毛毛雨 (-DZ)", safe: false }, 53: { cn: "毛毛雨 (DZ)", safe: false }, 55: { cn: "密毛毛雨 (+DZ)", safe: false }, 56: { cn: "轻微冻毛毛雨 (-FZDZ)", safe: false, danger: true }, 57: { cn: "密冻毛毛雨 (+FZDZ)", safe: false, danger: true }, 61: { cn: "小雨 (-RA)", safe: false }, 63: { cn: "中雨 (RA)", safe: false }, 65: { cn: "大雨 (+RA)", safe: false }, 66: { cn: "轻微冻雨 (-FZRA)", safe: false, danger: true }, 67: { cn: "强冻雨 (+FZRA)", safe: false, danger: true }, 71: { cn: "小雪 (-SN)", safe: false }, 73: { cn: "中雪 (SN)", safe: false }, 75: { cn: "大雪 (+SN)", safe: false }, 77: { cn: "雪粒 (SG/PL)", safe: false }, 80: { cn: "小阵雨 (-SHRA)", safe: false }, 81: { cn: "中阵雨 (SHRA)", safe: false }, 82: { cn: "强阵雨 (+SHRA)", safe: false }, 85: { cn: "小阵雪 (-SHSN)", safe: false }, 86: { cn: "大阵雪 (+SHSN)", safe: false }, 95: { cn: "雷暴 (TS)", safe: false, danger: true }, 96: { cn: "雷暴伴小冰雹 (TSGR)", safe: false, danger: true }, 99: { cn: "雷暴伴大冰雹 (TSGR)", safe: false, danger: true }
         };
 
+        const DB_URL = "https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json";
+        const DB_CACHE_KEY = "airport_db_cache_v1";
+        const DB_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+        const DATABASE_TIMEOUT_MS = 8000;
+        const API_TIMEOUT_MS = 18000;
         let EXTERNAL_DB = null;
+        let AIRPORT_DB_STATUS = "idle";
         let myChart = null;
         let currentView = 'hourly'; 
         let axisMode = 'tiered'; // 模式状态：'tiered' (分档固定) 或 'adaptive' (局部自适应)
@@ -484,18 +534,93 @@
             }
         }
 
+        async function fetchJsonWithTimeout(url, label, timeoutMs = API_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(url, { signal: controller.signal });
+                let data = null;
+                try { data = await res.json(); } catch (e) {}
+                if (!res.ok) {
+                    const detail = data && (data.reason || data.error || data.message);
+                    throw new Error(`${label} 请求失败: HTTP ${res.status}${detail ? ` - ${detail}` : ''}`);
+                }
+                if (data && data.error) {
+                    throw new Error(`${label} 请求失败: ${data.reason || data.message || data.error}`);
+                }
+                return data;
+            } catch (e) {
+                if (e.name === 'AbortError') throw new Error(`${label} 请求超时`);
+                throw e;
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        function readAirportCache() {
+            try {
+                const raw = localStorage.getItem(DB_CACHE_KEY);
+                if (!raw) return null;
+                const cache = JSON.parse(raw);
+                if (!cache || !cache.data || !cache.savedAt) return null;
+                if (Date.now() - cache.savedAt > DB_CACHE_TTL_MS) return null;
+                return cache.data;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function writeAirportCache(data) {
+            try {
+                localStorage.setItem(DB_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+            } catch (e) {}
+        }
+
+        async function loadAirportDatabase() {
+            if (EXTERNAL_DB) return EXTERNAL_DB;
+            const cached = readAirportCache();
+            try {
+                EXTERNAL_DB = await fetchJsonWithTimeout(DB_URL, "机场数据库", DATABASE_TIMEOUT_MS);
+                writeAirportCache(EXTERNAL_DB);
+                AIRPORT_DB_STATUS = "online";
+                return EXTERNAL_DB;
+            } catch (e) {
+                if (cached) {
+                    EXTERNAL_DB = cached;
+                    AIRPORT_DB_STATUS = "cache";
+                    return EXTERNAL_DB;
+                }
+                AIRPORT_DB_STATUS = "error";
+                throw new Error(`机场数据库不可用：${e.message}`);
+            }
+        }
+
         async function findAirport(icao) {
             if (AIRPORTS[icao]) return AIRPORTS[icao];
-            if (!EXTERNAL_DB) {
-                updateLoadStatus(null, "连接全球机场数据库...");
-                try {
-                    const res = await fetch('https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json');
-                    if (!res.ok) throw new Error("DB Error");
-                    EXTERNAL_DB = await res.json();
-                } catch (e) { console.warn("Load Failed"); }
-            }
+            updateLoadStatus(null, "连接全球机场数据库...");
+            await loadAirportDatabase();
             if (EXTERNAL_DB && EXTERNAL_DB[icao]) return { lat: EXTERNAL_DB[icao].lat, lon: EXTERNAL_DB[icao].lon, name: EXTERNAL_DB[icao].name };
-            throw new Error(`未找到代码 [${icao}]`);
+            const suffix = AIRPORT_DB_STATUS === "cache" ? "（当前使用本地缓存）" : "";
+            throw new Error(`未找到机场代码 [${icao}]${suffix}`);
+        }
+
+        function resetSourceStatus() {
+            document.querySelectorAll('[data-source-status]').forEach(el => {
+                el.className = 'source-chip';
+                const label = el.innerText.split(':')[0];
+                el.innerText = `${label}: 待加载`;
+                el.title = '';
+            });
+        }
+
+        function setSourceStatus(key, state, message) {
+            const el = document.querySelector(`[data-source-status="${key}"]`);
+            if (!el) return;
+            const label = el.innerText.split(':')[0];
+            el.className = `source-chip ${state}`;
+            const textMap = { loading: '加载中', ok: '成功', error: '失败' };
+            el.innerText = `${label}: ${textMap[state] || message || state}`;
+            el.title = message || '';
         }
 
         function updateLoadStatus(percent, text) {
@@ -553,6 +678,7 @@
             
             CURRENT_CODE = code;
             isLoadingAborted = false;
+            resetSourceStatus();
             if (!isZoomLocked) { savedZoomStart = 0; savedZoomEnd = 100; }
 
             updateLoadStatus(5, "正在定位机场...");
@@ -585,9 +711,8 @@
                     }
 
                     try {
-                        const res = await fetch(`${task.url}?${baseParams.toString()}`);
-                        if (!res.ok) throw new Error("HTTP Error");
-                        const data = await res.json();
+                        setSourceStatus(task.key, 'loading', `正在获取 ${task.label}`);
+                        const data = await fetchJsonWithTimeout(`${task.url}?${baseParams.toString()}`, task.label);
                         
                         let mName = "ECMWF";
                         if (task.key === 'hourly') mName = "ECMWF IFS (Hourly)";
@@ -605,11 +730,13 @@
                         }
 
                         completed++;
+                        setSourceStatus(task.key, 'ok', `${task.label} 加载成功`);
                         updateLoadStatus((completed / total) * 100, `获取 ${task.label} 数据...`);
 
                     } catch (e) {
                         console.error(`Failed to load ${task.key}:`, e);
                         completed++;
+                        setSourceStatus(task.key, 'error', e.message);
                         updateLoadStatus((completed / total) * 100, `跳过 ${task.label} (失败)`);
                     }
                 }));
@@ -640,13 +767,15 @@
             });
 
             try {
-                const res = await fetch(`https://climate-api.open-meteo.com/v1/climate?${baseParams.toString()}`);
-                const data = await res.json();
+                setSourceStatus('climate', 'loading', '正在更新气候数据');
+                const data = await fetchJsonWithTimeout(`https://climate-api.open-meteo.com/v1/climate?${baseParams.toString()}`, "气候数据");
                 DATA_CACHE['climate'] = { data: processData(data, 'climate'), modelName: "CMIP6 EC-Earth3P" };
+                setSourceStatus('climate', 'ok', '气候数据更新成功');
                 setLoaderDisplay(false);
                 renderFromCache('climate');
             } catch (e) {
-                alert("气候数据加载失败，请检查时间范围");
+                setSourceStatus('climate', 'error', e.message);
+                alert(e.message || "气候数据加载失败，请检查时间范围");
                 setLoaderDisplay(false);
             }
         }
