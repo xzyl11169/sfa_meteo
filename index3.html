@@ -7,18 +7,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <style>
         :root {
-            --sf-red: #D7000F;
-            --sf-dark: #2A2A2A;
-            --bg-body: #f4f5f7;
-            --surface: #ffffff;
-            --border: #e2e8f0;
-            --text-main: #1a202c;
-            --text-sub: #718096;
+            --sf-red: #38bdf8;
+            --sf-dark: #f8fafc;
+            --bg-body: #020617;
+            --surface: #0f172a;
+            --surface-2: #111827;
+            --border: #334155;
+            --text-main: #e5edf7;
+            --text-sub: #94a3b8;
+            --accent-soft: rgba(56, 189, 248, 0.15);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
-            background-color: var(--bg-body);
+            background:
+                radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.12), transparent 28%),
+                linear-gradient(135deg, #020617 0%, #0f172a 52%, #111827 100%);
             color: var(--text-main);
             margin: 0;
             padding: 20px;
@@ -36,49 +40,17 @@
         }
 
         /* --- 极简单行表头 (Toolbar Style) --- */
-        .site-nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 10px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            white-space: nowrap;
-        }
-        .site-nav-label {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .08em;
-            color: #0f172a;
-        }
-        .site-nav-link {
-            color: #64748b;
-            font-size: 12px;
-            text-decoration: none;
-            padding: 5px 8px;
-            border-radius: 5px;
-            border: 1px solid transparent;
-        }
-        .site-nav-link:hover {
-            color: #0f172a;
-            background: #e2e8f0;
-        }
-        .site-nav-link.active {
-            color: #0369a1;
-            border-color: #bae6fd;
-            background: #e0f2fe;
-        }
         .toolbar-header {
             background: var(--surface);
-            height: 60px; /* 固定高度 */
+            height: 64px; /* 固定高度 */
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.22);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            border-left: 4px solid var(--sf-red); /* 左侧红条装饰 */
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--sf-red); /* 左侧强调条 */
             white-space: nowrap; /* 防止换行 */
         }
 
@@ -87,12 +59,6 @@
             display: flex;
             align-items: center;
             gap: 15px;
-        }
-        .page-role {
-            font-size: 12px;
-            color: #64748b;
-            display: block;
-            margin-top: 2px;
         }
 
         h1 {
@@ -110,8 +76,8 @@
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 4px;
-            background: #eee;
-            color: #666;
+            background: #1e293b;
+            color: #cbd5e1;
             font-weight: normal;
         }
         .status-badge.ok { background: #def7ec; color: #03543f; }
@@ -131,8 +97,8 @@
             display: flex;
             align-items: center;
             gap: 0; /* 紧凑连接 */
-            background: #fff;
-            border: 1px solid #e2e8f0;
+            background: #020617;
+            border: 1px solid #475569;
             border-radius: 6px;
             overflow: hidden;
             transition: border-color 0.2s;
@@ -140,7 +106,7 @@
 
         .input-group:focus-within {
             border-color: var(--sf-red);
-            box-shadow: 0 0 0 2px rgba(215, 0, 15, 0.1);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12);
         }
 
         .form-control {
@@ -150,11 +116,12 @@
             font-size: 14px;
             outline: none;
             background: transparent;
+            color: #f8fafc;
         }
 
         .input-icao {
             width: 80px;
-            border-right: 1px solid #e2e8f0;
+            border-right: 1px solid #334155;
             font-weight: bold;
             text-transform: uppercase;
             font-family: monospace;
@@ -167,7 +134,7 @@
 
         .btn-search {
             background: var(--sf-red);
-            color: white;
+            color: #082f49;
             border: none;
             height: 32px;
             padding: 0 16px;
@@ -177,8 +144,8 @@
             border-radius: 0 5px 5px 0; /* 只有右侧圆角 */
             margin-left: -1px; /* 修正边框重叠 */
         }
-        .btn-search:hover { background: #b9000d; }
-        .btn-search:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-search:hover { filter: brightness(1.08); }
+        .btn-search:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
 
         /* 右侧：视图控制 */
         .header-right {
@@ -190,7 +157,8 @@
         /* 切换开关 */
         .toggle-switch {
             display: flex;
-            background: #e2e8f0;
+            background: #020617;
+            border: 1px solid #334155;
             padding: 2px;
             border-radius: 4px;
         }
@@ -201,20 +169,20 @@
             font-weight: 600;
             border-radius: 3px;
             cursor: pointer;
-            color: #64748b;
+            color: #94a3b8;
             transition: 0.2s;
         }
 
         .toggle-item.active {
-            background: white;
-            color: var(--sf-dark);
+            background: var(--sf-red);
+            color: #082f49;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .btn-icon {
-            background: white;
-            border: 1px solid #e2e8f0;
-            color: #4a5568;
+            background: #020617;
+            border: 1px solid #475569;
+            color: #cbd5e1;
             height: 32px;
             padding: 0 12px;
             border-radius: 4px;
@@ -224,14 +192,38 @@
             align-items: center;
             gap: 4px;
         }
-        .btn-icon:hover { background: #f7fafc; border-color: #cbd5e0; }
+        .btn-icon:hover { background: #1e293b; border-color: #38bdf8; color: #f8fafc; }
+
+        .site-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .site-link {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 12px;
+            padding: 7px 9px;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            background: #020617;
+        }
+
+        .site-link:hover,
+        .site-link.active {
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.55);
+            background: rgba(56, 189, 248, 0.12);
+        }
 
         /* --- 结果信息条 (Banner) --- */
         .info-banner {
-            background: #2d3748;
+            background: #111827;
             color: white;
             padding: 10px 20px;
             border-radius: 6px;
+            border: 1px solid var(--border);
             font-size: 13px;
             display: none; /* 默认隐藏 */
             align-items: center;
@@ -240,7 +232,7 @@
         .info-main { display: flex; align-items: baseline; gap: 10px; }
         .info-code { font-size: 18px; font-weight: bold; font-family: monospace; color: #fff; }
         .info-sub { color: #a0aec0; font-size: 12px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-end; }
-        .method-note { color: #fbd38d; }
+        .method-note { color: #facc15; }
 
         /* --- 说明面板 --- */
         .info-panels {
@@ -271,12 +263,12 @@
             font-family: inherit;
         }
 
-        .info-panel-toggle:hover { background: #f8fafc; }
+        .info-panel-toggle:hover { background: #1e293b; }
 
         .info-panel-title {
             font-size: 13px;
             font-weight: 700;
-            color: var(--sf-dark);
+            color: #f8fafc;
         }
 
         .info-panel-summary {
@@ -292,7 +284,7 @@
             height: 20px;
             border-radius: 50%;
             border: 1px solid var(--border);
-            color: #64748b;
+            color: #94a3b8;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -304,15 +296,15 @@
             display: none;
             border-top: 1px solid var(--border);
             padding: 2px 14px 10px;
-            color: #4a5568;
+            color: #cbd5e1;
             font-size: 12px;
         }
 
         .info-panel.expanded .info-panel-body { display: block; }
 
         .info-panel.expanded .info-panel-icon {
-            background: #f8fafc;
-            color: var(--sf-red);
+            background: var(--accent-soft);
+            color: #38bdf8;
         }
 
         .info-panel-body ul {
@@ -340,8 +332,8 @@
         }
 
         .month-header {
-            background: #f8f9fa;
-            color: #2d3748;
+            background: #111827;
+            color: #f8fafc;
             text-align: center;
             padding: 6px;
             font-weight: 700;
@@ -352,11 +344,11 @@
         .week-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            background: #fff;
+            background: #0f172a;
             text-align: center;
             font-size: 11px;
             padding: 4px 0;
-            color: #718096;
+            color: #94a3b8;
             border-bottom: 1px solid var(--border);
         }
 
@@ -374,6 +366,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            background: #ffffff;
         }
         .day-cell:nth-child(7n) { border-right: none; }
         .day-cell:nth-child(7n), .day-cell:nth-child(7n-6) { background-color: #fcfcfc; }
@@ -397,8 +390,9 @@
                 padding: 12px 16px;
                 white-space: normal;
             }
-            .site-nav { width: 100%; overflow-x: auto; }
             .header-center { order: 3; flex-basis: 100%; justify-content: flex-start; }
+            .header-right { flex-wrap: wrap; }
+            .site-links { width: 100%; overflow-x: auto; }
             .info-banner { flex-direction: column; align-items: flex-start; gap: 8px; }
             .info-sub { justify-content: flex-start; }
             .info-panels { grid-template-columns: 1fr; }
@@ -425,16 +419,9 @@
 <div class="app-container">
     
     <header class="toolbar-header">
-        <nav class="site-nav" data-site-nav aria-label="SF AOC METEO 专业工具导航">
-            <span class="site-nav-label">SF AOC METEO</span>
-            <a class="site-nav-link" href="./">精细化预报</a>
-            <a class="site-nav-link" href="./index2">多尺度研判</a>
-            <a class="site-nav-link active" href="./index3">日照参考</a>
-        </nav>
         <div class="header-left">
             <h1>机场日照与昼夜节律参考</h1>
             <span id="dbStatusBadge" class="status-badge">连接数据库...</span>
-            <span class="page-role">UTC/LT · 日出日落 · 昼长变化</span>
         </div>
 
         <div class="header-center">
@@ -446,6 +433,12 @@
         </div>
 
         <div class="header-right">
+            <div class="site-links" aria-label="页面入口">
+                <a class="site-link" href="./">首页</a>
+                <a class="site-link" href="./index1">精细化</a>
+                <a class="site-link" href="./index2">多尺度</a>
+                <a class="site-link active" href="./index3">日照</a>
+            </div>
             <div class="toggle-switch">
                 <div class="toggle-item active" id="btnUTC" onclick="setMode('UTC')">UTC</div>
                 <div class="toggle-item" id="btnLT" onclick="setMode('LT')">LT</div>
@@ -464,7 +457,6 @@
             <span>Lat/Lon: <b id="bannerCoord">--</b></span>
             <span>Timezone: <b id="bannerTz">--</b></span>
             <span id="bannerMethod" class="method-note">算法: 经纬度计算，未校正海拔/地形遮挡</span>
-            <span class="method-note">本工具基于公开数值预报、机场基础资料和理论计算结果生成，仅供气象值班、趋势研判和运行参考，不作为放行、签派或运行标准的唯一依据。</span>
         </div>
     </div>
 

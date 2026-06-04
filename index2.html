@@ -32,8 +32,8 @@
             border-bottom: 1px solid var(--border);
             padding: 0 15px;
             height: 50px;
-            display: flex; 
-            align-items: center; 
+            display: flex;
+            align-items: center;
             gap: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 50;
@@ -42,60 +42,19 @@
         }
         .navbar::-webkit-scrollbar { display: none; }
 
-        .site-nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 10px;
-            background: rgba(15, 23, 42, 0.92);
-            border-right: 1px solid #334155;
-            border-radius: 6px;
-            white-space: nowrap;
+        .brand {
+            font-size: 16px; font-weight: 700; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 6px;
             flex-shrink: 0;
         }
-        .site-nav-label {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .08em;
-            color: #e2e8f0;
-        }
-        .site-nav-link {
-            color: #94a3b8;
-            font-size: 12px;
-            text-decoration: none;
-            padding: 5px 8px;
-            border-radius: 5px;
-            border: 1px solid transparent;
-        }
-        .site-nav-link:hover {
-            color: #f8fafc;
-            background: rgba(51, 65, 85, 0.78);
-        }
-        .site-nav-link.active {
-            color: #38bdf8;
-            border-color: rgba(56, 189, 248, 0.35);
-            background: rgba(14, 165, 233, 0.12);
-        }
-        .brand { 
-            font-size: 16px; font-weight: 700; letter-spacing: 0.5px; 
-            display: flex; align-items: center; gap: 6px; 
-            flex-shrink: 0;
-        }
-        .brand-tag { 
+        .brand-tag {
             background: var(--accent);
-            font-size: 10px; padding: 1px 5px; 
+            font-size: 10px; padding: 1px 5px;
             border-radius: 4px; color: #0f172a; font-weight: bold;
         }
         .disclaimer {
             font-size: 11px; color: #64748b; font-weight: normal; margin-left: 5px;
             padding-right: 10px; border-right: 1px solid #334155;
-        }
-        .page-role {
-            font-size: 11px;
-            color: #cbd5e1;
-            margin-left: 6px;
-            padding-left: 8px;
-            border-left: 1px solid #334155;
         }
         @media (max-width: 1100px) { .disclaimer { display: none; } }
 
@@ -105,7 +64,7 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: 2px;
-            flex-shrink: 0; 
+            flex-shrink: 0;
         }
         .view-btn {
             background: transparent;
@@ -130,7 +89,7 @@
             margin-left: auto;
             flex-shrink: 0;
         }
-        
+
         .mode-toggle-btn {
             background: #0f172a;
             border: 1px solid #475569;
@@ -185,23 +144,23 @@
         }
 
         .main-view {
-            flex: 1; 
+            flex: 1;
             position: relative;
-            overflow-y: auto; 
+            overflow-y: auto;
             padding: 10px;
             background: var(--bg-body);
         }
 
         #chart {
-            width: 100%; 
-            height: 1200px; 
-            border-radius: 8px; 
-            background: var(--bg-panel); 
+            width: 100%;
+            height: 1200px;
+            border-radius: 8px;
+            background: var(--bg-panel);
             border: 1px solid var(--border);
         }
 
         .lock-container {
-            position: absolute; 
+            position: absolute;
             bottom: 5px;
             right: 15px;
             z-index: 200;
@@ -209,14 +168,14 @@
             display: flex; align-items: center;
         }
         .lock-btn {
-            background: rgba(15, 23, 42, 0.8); border: 1px solid #475569; 
+            background: rgba(15, 23, 42, 0.8); border: 1px solid #475569;
             color: #94a3b8; padding: 0; border-radius: 4px;
             cursor: pointer; font-size: 14px; width: 30px; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            transition: all 0.2s; 
+            transition: all 0.2s;
         }
         .lock-btn.active {
-            background: rgba(56, 189, 248, 0.2); 
+            background: rgba(56, 189, 248, 0.2);
             border-color: var(--accent);
             color: var(--accent);
         }
@@ -268,32 +227,6 @@
         .source-chip.ok { color: #86efac; border-color: rgba(34,197,94,0.45); }
         .source-chip.error { color: #fca5a5; border-color: rgba(239,68,68,0.45); }
         .source-chip.loading { color: #7dd3fc; border-color: rgba(56,189,248,0.45); }
-        .scale-guide {
-            position: absolute;
-            top: 82px;
-            left: 12px;
-            right: 12px;
-            z-index: 9;
-            display: grid;
-            grid-template-columns: repeat(5, minmax(120px, 1fr));
-            gap: 8px;
-            pointer-events: none;
-        }
-        .scale-guide-item {
-            background: rgba(15, 23, 42, 0.72);
-            border: 1px solid rgba(148, 163, 184, 0.24);
-            border-radius: 6px;
-            padding: 7px 9px;
-            color: #cbd5e1;
-            font-size: 11px;
-            line-height: 1.35;
-        }
-        .scale-guide-item strong {
-            display: block;
-            color: #f8fafc;
-            font-size: 12px;
-            margin-bottom: 2px;
-        }
         .source-note {
             position: absolute;
             left: 18px;
@@ -312,26 +245,15 @@
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        @media (max-width: 760px) {
-            .site-nav { width: 100%; overflow-x: auto; }
-            .scale-guide { position: static; grid-template-columns: 1fr; padding: 8px 10px 0; background: #020617; }
-        }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <nav class="site-nav" data-site-nav aria-label="SF AOC METEO 专业工具导航">
-            <span class="site-nav-label">SF AOC METEO</span>
-            <a class="site-nav-link" href="./">精细化预报</a>
-            <a class="site-nav-link active" href="./index2">多尺度研判</a>
-            <a class="site-nav-link" href="./index3">日照参考</a>
-        </nav>
         <div class="brand">
-            <span>多尺度趋势研判</span>
+            SF AOC
             <span class="brand-tag">METEO</span>
-            <span class="page-role">0-7D / 15D / 45D / 6M / Climate</span>
-            <span class="disclaimer">本工具基于公开数值预报、机场基础资料和理论计算结果生成，仅供气象值班、趋势研判和运行参考，不作为放行、签派或运行标准的唯一依据。</span>
+            <span class="disclaimer">本预测结果为数值预报客观结论</span>
         </div>
 
         <div class="view-toggles">
@@ -368,7 +290,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="main-view">
         <div id="sourceStatusPanel" class="source-status-panel">
             <span class="source-chip" data-source-status="hourly">精细化: 待加载</span>
@@ -376,13 +298,6 @@
             <span class="source-chip" data-source-status="weekly">延伸期: 待加载</span>
             <span class="source-chip" data-source-status="monthly">季节: 待加载</span>
             <span class="source-chip" data-source-status="climate">气候: 待加载</span>
-        </div>
-        <div class="scale-guide" aria-label="多尺度产品适用范围">
-            <div class="scale-guide-item"><strong>精细化</strong>0-7 天逐小时要素，适合短期值班查看。</div>
-            <div class="scale-guide-item"><strong>集合</strong>0-15 天不确定性，适合趋势和风险范围判断。</div>
-            <div class="scale-guide-item"><strong>延伸期</strong>15-45 天背景趋势，只作中期形势参考。</div>
-            <div class="scale-guide-item"><strong>季节</strong>1-6 个月距平趋势，不直接用于单日运行判断。</div>
-            <div class="scale-guide-item"><strong>气候</strong>历史与未来气候背景，适合对比和长期参考。</div>
         </div>
         <div id="chart"></div>
         <div class="source-note">数据来源：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> / <a href="https://github.com/mwgg/Airports" target="_blank" rel="noopener">mwgg Airports</a> / <a href="https://echarts.apache.org/" target="_blank" rel="noopener">ECharts</a>；数值预报结果仅供值班参考。</div>
@@ -411,7 +326,7 @@
             'ZSHC': {lat: 30.23, lon: 120.43, name: "杭州萧山"},
             'ZBAA': {lat: 40.08, lon: 116.58, name: "北京首都"}
         };
-        
+
         const VIEW_NAMES = {
             'hourly': '精细化预测 (逐小时)',
             'ensemble': '集合预报 (IFS ENS)',
@@ -432,25 +347,25 @@
         let EXTERNAL_DB = null;
         let AIRPORT_DB_STATUS = "idle";
         let myChart = null;
-        let currentView = 'hourly'; 
+        let currentView = 'hourly';
         let axisMode = 'tiered'; // 模式状态：'tiered' (分档固定) 或 'adaptive' (局部自适应)
         let isZoomLocked = false;
         let savedZoomStart = 0;
         let savedZoomEnd = 100;
-        let currentHourlyZoomInterval = 2; 
+        let currentHourlyZoomInterval = 2;
         let isLoadingAborted = false;
 
         const DATA_CACHE = {
             hourly: null, ensemble: null, weekly: null, monthly: null, climate: null
         };
-        
+
         let CURRENT_LOC = null;
         let CURRENT_CODE = "ZHEC";
 
         // ===============================================
         // 核心坐标轴逻辑：智能分档固定 vs 局部自适应
         // ===============================================
-        
+
         function mergeSeriesValues(arrays) {
             return arrays.flatMap(arr => (arr || []).map(v => Number(v)).filter(v => Number.isFinite(v)));
         }
@@ -486,10 +401,10 @@
                 if(type === 'pressure') return { min: 990, max: 1030 };
                 return { min: 0, max: 100 };
             }
-            
+
             const min = Math.min(...valid);
             const max = Math.max(...valid);
-            
+
             let tMin, tMax;
 
             // 首先：尝试匹配业务经验档位
@@ -552,7 +467,7 @@
 
         function switchView(view) {
             currentView = view;
-            
+
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${view}`).classList.add('active');
 
@@ -560,7 +475,7 @@
             if (view === 'climate') {
                 climateCtrl.style.display = 'flex';
                 if (!document.getElementById('startDate').value) {
-                    onPresetChange(true); 
+                    onPresetChange(true);
                 }
             } else {
                 climateCtrl.style.display = 'none';
@@ -589,7 +504,7 @@
                     sDate = new Date(now); eDate = new Date(now); eDate.setFullYear(now.getFullYear() + 1);
                     startIn.value = sDate.toISOString().slice(0,10); endIn.value = eDate.toISOString().slice(0,10);
                 }
-                return; 
+                return;
             } else {
                 customDiv.style.display = 'none';
             }
@@ -601,7 +516,7 @@
 
             if (sDate && eDate) {
                 startIn.value = sDate.toISOString().slice(0,10); endIn.value = eDate.toISOString().slice(0,10);
-                if (!silent) queryCustomClimate(); 
+                if (!silent) queryCustomClimate();
             }
         }
 
@@ -733,7 +648,7 @@
             const detailText = document.getElementById('load-detail');
             const errBox = document.getElementById('error-msg');
             const ringVal = document.getElementById('ring-val');
-            
+
             loadText.innerText = "加载中断";
             loadText.style.color = "#ef4444";
             ringVal.style.stroke = "#ef4444";
@@ -760,7 +675,7 @@
         async function queryAll() {
             const code = document.getElementById('icao').value.trim().toUpperCase();
             if (!code || code.length !== 4) return alert("请输入4位代码");
-            
+
             CURRENT_CODE = code;
             isLoadingAborted = false;
             resetSourceStatus();
@@ -770,7 +685,7 @@
 
             try {
                 const loc = await findAirport(code);
-                CURRENT_LOC = loc; 
+                CURRENT_LOC = loc;
 
                 const tasks = [
                     { key: 'hourly', label: '精细化预测', url: 'https://api.open-meteo.com/v1/ecmwf', params: { hourly: 'temperature_2m,dewpoint_2m,precipitation,rain,snowfall,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m,pressure_msl', forecast_days: 7 } },
@@ -790,7 +705,7 @@
                         latitude: loc.lat, longitude: loc.lon,
                         wind_speed_unit: 'ms', timezone: 'GMT', timeformat: 'unixtime'
                     });
-                    
+
                     for (const [k, v] of Object.entries(task.params)) {
                         baseParams.append(k, v);
                     }
@@ -798,7 +713,7 @@
                     try {
                         setSourceStatus(task.key, 'loading', `正在获取 ${task.label}`);
                         const data = await fetchJsonWithTimeout(`${task.url}?${baseParams.toString()}`, task.label);
-                        
+
                         let mName = "ECMWF";
                         if (task.key === 'hourly') mName = "ECMWF IFS (Hourly)";
                         if (task.key === 'climate') mName = "CMIP6 EC-Earth3P";
@@ -842,7 +757,7 @@
             setLoaderDisplay(true);
             const s = document.getElementById('startDate').value;
             const e = document.getElementById('endDate').value;
-            
+
             let baseParams = new URLSearchParams({
                 latitude: CURRENT_LOC.lat, longitude: CURRENT_LOC.lon,
                 wind_speed_unit: 'ms', timezone: 'GMT', timeformat: 'unixtime',
@@ -869,7 +784,7 @@
             const cache = DATA_CACHE[view];
             if (!cache) {
                 if (myChart) myChart.clear();
-                return; 
+                return;
             }
 
             if (view === 'hourly') {
@@ -926,7 +841,7 @@
             const m = String(now.getMonth() + 1).padStart(2, '0');
             const y = now.getFullYear();
             if (view === 'ensemble') return `${d}日`;
-            if (view === 'climate') return `${y}-${m}-${d}`; 
+            if (view === 'climate') return `${y}-${m}-${d}`;
             return `${m}-${d}`;
         }
 
@@ -936,7 +851,7 @@ function processData(data, view) {
                 const d = data.daily || data;
                 // 找到一个关键指标（日常取温，小时取温）来判断有效性
                 const checkKey = d.temperature_2m_max ? 'temperature_2m_max' : (d.temperature_2m ? 'temperature_2m' : null);
-                
+
                 if (d && d.time && checkKey && d[checkKey]) {
                     let lastValid = -1;
                     for (let i = d.time.length - 1; i >= 0; i--) {
@@ -955,8 +870,8 @@ function processData(data, view) {
                         });
                     }
                 }
-                return d; 
-            } 
+                return d;
+            }
 
             // 2. 针对集合预报的精细去尾逻辑
             const d = data.daily;
@@ -974,7 +889,7 @@ function processData(data, view) {
             const keys = Object.keys(d);
             let memberCount = 0;
             keys.forEach(k => { if (k.includes('temperature_2m_max_member')) memberCount++; });
-            
+
             if (memberCount === 0) return { ...d, isEnsemble: false };
 
             let lastValidIndex = -1; // 记录最后一天有数据的索引
@@ -996,7 +911,7 @@ function processData(data, view) {
                         tMaxSum += vTmax; tMaxArr.push(vTmax);
                         tMinSum += vTmin; tMinArr.push(vTmin);
                         pSum += vP; wSum += vW; sSum += vS;
-                        
+
                         if (result.precip_max[i] === null) result.precip_max[i] = vP;
                         else result.precip_max[i] = Math.max(result.precip_max[i], vP);
 
@@ -1016,7 +931,7 @@ function processData(data, view) {
 
                     result.tMax_min[i] = Math.min(...tMaxArr); result.tMax_max[i] = Math.max(...tMaxArr);
                     result.tMin_min[i] = Math.min(...tMinArr); result.tMin_max[i] = Math.max(...tMinArr);
-                    
+
                     lastValidIndex = i; // 只要有数据，就更新最远有效天数
                 }
             }
@@ -1062,13 +977,13 @@ function processData(data, view) {
             const initStr = `${modelInfo} | Update: ${updateStr}`;
 
             const times = h.time.map(t => {
-                const d = new Date(t * 1000); 
+                const d = new Date(t * 1000);
                 const hour = d.getUTCHours();
-                return String(hour).padStart(2,'0') + 'Z'; 
+                return String(hour).padStart(2,'0') + 'Z';
             });
 
             const colors = {
-                wind: '#38bdf8', gust: '#7dd3fc', temp: '#fbbf24', dew: '#2dd4bf', 
+                wind: '#38bdf8', gust: '#7dd3fc', temp: '#fbbf24', dew: '#2dd4bf',
                 rain: '#3b82f6', snow: '#c084fc', cloud: '#a78bfa',
                 humidity: '#22d3ee', pressure: '#f59e0b',
                 grid: '#334155', text: '#cbd5e1'
@@ -1080,35 +995,35 @@ function processData(data, view) {
             const tempVals = mergeSeriesValues([h.temperature_2m, h.dewpoint_2m]);
             const presVals = mergeSeriesValues([h.pressure_msl]);
 
-            const windAxis = axisMode === 'tiered' 
-                ? getTieredAxisRange(windVals, 'wind') 
+            const windAxis = axisMode === 'tiered'
+                ? getTieredAxisRange(windVals, 'wind')
                 : getNiceAxisRange(windVals, { includeZeroMin: true, floorZero: true, paddingRatio: 0.1 });
-            const precipAxis = axisMode === 'tiered' 
-                ? getTieredAxisRange(precipVals, 'precip') 
+            const precipAxis = axisMode === 'tiered'
+                ? getTieredAxisRange(precipVals, 'precip')
                 : getNiceAxisRange(precipVals, { includeZeroMin: true, floorZero: true, paddingRatio: 0.1 });
-            const tempAxis = axisMode === 'tiered' 
-                ? getTieredAxisRange(tempVals, 'temp') 
+            const tempAxis = axisMode === 'tiered'
+                ? getTieredAxisRange(tempVals, 'temp')
                 : getNiceAxisRange(tempVals, { paddingRatio: 0.15 });
-            const pressureAxis = axisMode === 'tiered' 
-                ? getTieredAxisRange(presVals, 'pressure') 
+            const pressureAxis = axisMode === 'tiered'
+                ? getTieredAxisRange(presVals, 'pressure')
                 : getNiceAxisRange(presVals, { paddingRatio: 0.08 });
 
             const nowTs = Date.now() / 1000;
             const nowIdx = h.time.findIndex(t => t >= nowTs);
             const nowLine = {
-                symbol: ['none', 'none'], label: { show: false }, 
-                lineStyle: { color: '#fff', type: 'dashed', width: 2, opacity: 0.6 }, 
+                symbol: ['none', 'none'], label: { show: false },
+                lineStyle: { color: '#fff', type: 'dashed', width: 2, opacity: 0.6 },
                 data: nowIdx !== -1 ? [{ xAxis: nowIdx }] : [], z: 100
             };
 
             const marker = (color) => `<span style="display:inline-block;margin-right:4px;border-radius:50%;width:10px;height:10px;background-color:${color};"></span>`;
 
             const gridSettings = [
-                { top: '10%', height: '12%', left: 60, right: 50 },  
-                { top: '28%', height: '12%', left: 60, right: 50 }, 
-                { top: '46%', height: '12%', left: 60, right: 50 }, 
-                { top: '64%', height: '12%', left: 60, right: 50 }, 
-                { top: '82%', height: '12%', left: 60, right: 50 } 
+                { top: '10%', height: '12%', left: 60, right: 50 },
+                { top: '28%', height: '12%', left: 60, right: 50 },
+                { top: '46%', height: '12%', left: 60, right: 50 },
+                { top: '64%', height: '12%', left: 60, right: 50 },
+                { top: '82%', height: '12%', left: 60, right: 50 }
             ];
 
             const legendCommon = {
@@ -1125,7 +1040,7 @@ function processData(data, view) {
                 { ...legendCommon, top: '80%', right: 50, data: [{name: '气压', itemStyle:{color: colors.pressure}}] }
             ];
 
-            const commonAxisFormatter = function(value, index) { 
+            const commonAxisFormatter = function(value, index) {
                 if (!h || !h.time || h.time[index] === undefined) return value;
                 const d = new Date(h.time[index] * 1000);
                 const hour = d.getUTCHours();
@@ -1134,21 +1049,21 @@ function processData(data, view) {
                     const dd = String(d.getUTCDate()).padStart(2,'0');
                     return `${value}\n${mm}-${dd}`;
                 }
-                return `${value}\n`; 
+                return `${value}\n`;
             };
 
             const commonXAxisStyle = { lineStyle: { color: '#475569' } };
             const commonLabelStyle = { color: colors.text, fontSize: 11, interval: currentHourlyZoomInterval, lineHeight: 12 };
 
             const option = {
-                backgroundColor: '#1e293b', 
+                backgroundColor: '#1e293b',
                 title: {
                     text: `{name|${code}-${name}} {tag|精细化预测} {info|${initStr}}`,
-                    left: 20, top: 30, 
+                    left: 20, top: 30,
                     textStyle: { rich: {
                         name: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
                         tag: { color: '#0f172a', backgroundColor: '#38bdf8', borderRadius: 3, padding: [2, 6], fontSize: 12, fontWeight: 'bold' },
-                        info: { color: '#94a3b8', fontSize: 12, padding: [4, 0, 0, 10] } 
+                        info: { color: '#94a3b8', fontSize: 12, padding: [4, 0, 0, 10] }
                     }}
                 },
                 tooltip: {
@@ -1160,9 +1075,9 @@ function processData(data, view) {
                         const wCode = h.weather_code[i];
                         const wDir = h.wind_direction_10m[i];
                         const pressure = h.pressure_msl[i];
-                        const dewPoint = h.dewpoint_2m[i]; 
+                        const dewPoint = h.dewpoint_2m[i];
                         const wxInfo = WMO_CODE_MAP[wCode] || { cn: `Code ${wCode}`, safe: true };
-                        
+
                         const rawTime = h.time[i];
                         const d = new Date(rawTime * 1000);
                         const yyyy = d.getUTCFullYear();
@@ -1170,10 +1085,10 @@ function processData(data, view) {
                         const dd = String(d.getUTCDate()).padStart(2, '0');
                         const hh = String(d.getUTCHours()).padStart(2, '0');
                         const tipTime = `${yyyy}-${mm}-${dd} ${hh}Z`;
-                        
+
                         let html = `<div style="border-bottom:1px solid #555;padding-bottom:5px;margin-bottom:5px;font-weight:bold">${tipTime}</div>`;
                         html += `<div style="display:flex;justify-content:space-between;color:#fbbf24;font-weight:bold;margin-bottom:5px;"><span>天气： </span><span>${wxInfo.danger ? '⚠️ ' : ''}${wxInfo.cn}</span></div>`;
-                        
+
                         const map = {};
                         params.forEach(p => map[p.seriesName] = p);
 
@@ -1195,8 +1110,8 @@ function processData(data, view) {
                 axisPointer: { link: { xAxisIndex: 'all' }, label: { backgroundColor: '#777' } },
                 grid: gridSettings,
                 xAxis: [
-                    { 
-                        type: 'category', data: times, gridIndex: 0, axisLine: commonXAxisStyle, axisTick: { show: true }, 
+                    {
+                        type: 'category', data: times, gridIndex: 0, axisLine: commonXAxisStyle, axisTick: { show: true },
                         axisLabel: { ...commonLabelStyle, margin: 8, formatter: function(value, index) { const dir = getWindDirText(h.wind_direction_10m[index]); return `${dir}\n${commonAxisFormatter(value, index)}`; } }
                     },
                     { type: 'category', data: times, gridIndex: 1, axisLine: commonXAxisStyle, axisTick: { show: true }, axisLabel: { ...commonLabelStyle, formatter: commonAxisFormatter } },
@@ -1228,7 +1143,7 @@ function processData(data, view) {
             };
 
             myChart.setOption(option, true);
-            
+
             myChart.off('dataZoom');
             myChart.on('dataZoom', function () {
                 const opt = myChart.getOption();
@@ -1238,7 +1153,7 @@ function processData(data, view) {
                 }
                 const totalHours = h.time.length;
                 const visibleHours = (opt.dataZoom[0].end - opt.dataZoom[0].start) / 100 * totalHours;
-                const newInterval = visibleHours <= 72 ? 0 : 2; 
+                const newInterval = visibleHours <= 72 ? 0 : 2;
                 if (newInterval !== currentHourlyZoomInterval) {
                     currentHourlyZoomInterval = newInterval;
                     myChart.setOption({ xAxis: [ { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } }, { axisLabel: { interval: newInterval } } ] });
@@ -1268,7 +1183,7 @@ function processData(data, view) {
             });
 
             const c = {
-                tMax: '#ef4444', tMean: '#fbbf24', tMin: '#3b82f6', tArea: 'rgba(251, 191, 36, 0.2)', 
+                tMax: '#ef4444', tMean: '#fbbf24', tMin: '#3b82f6', tArea: 'rgba(251, 191, 36, 0.2)',
                 rain: '#38bdf8', snow: '#c084fc',
                 wind: '#10b981', gust: '#34d399',
                 pressure: '#f59e0b', grid: '#334155', text: '#cbd5e1', humid: '#06b6d4'
@@ -1332,22 +1247,22 @@ function processData(data, view) {
             const commonXAxis = {
                 type: 'category', data: dates, axisTick: { alignWithLabel: true },
                 axisLine: { lineStyle: { color: '#475569' } },
-                axisLabel: { 
+                axisLabel: {
                     color: c.text, interval: 'auto', fontSize: 11, lineHeight: 12,
                     formatter: function (value) {
                         if (value === todayAxisStr || value.endsWith(todayAxisStr)) return '{current|' + value + '}';
                         return value;
                     },
                     rich: { current: { color: '#facc15', fontWeight: 'bold' } }
-                } 
+                }
             };
 
             let seriesList = [];
-            
+
             if (isEns) {
                 seriesList.push(
                     { name: '集合散度区间', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMax_max, lineStyle: { opacity: 0 }, areaStyle: { color: c.tArea, origin: 'start' }, stack: 'confidence-max', symbol: 'none' },
-                    { name: '集合散度区间', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMax_min, lineStyle: { opacity: 0 }, areaStyle: { color: '#1e293b', origin: 'start' }, stack: 'confidence-min', symbol: 'none' }, 
+                    { name: '集合散度区间', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMax_min, lineStyle: { opacity: 0 }, areaStyle: { color: '#1e293b', origin: 'start' }, stack: 'confidence-min', symbol: 'none' },
                     { name: '最高温均值', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMax_mean, smooth: true, lineStyle: { width: 2, color: c.tMax }, itemStyle: { color: c.tMax } },
                     { name: '最低温均值', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: d.tMin_mean, smooth: true, lineStyle: { width: 2, color: c.tMin }, itemStyle: { color: c.tMin } },
                     { name: '平均降水', type: 'bar', xAxisIndex: 1, yAxisIndex: 1, data: d.precip_mean, itemStyle: { color: c.rain, opacity: 0.6 } },
@@ -1366,7 +1281,7 @@ function processData(data, view) {
                     { name: '最大风速', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: d.wind_speed_10m_max, smooth: true, lineStyle: { width: 2, color: c.wind }, areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0, color:'rgba(16,185,129,0.3)'}, {offset:1, color:'rgba(16,185,129,0)'}]) } },
                     { name: '最大阵风', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: d.wind_gusts_10m_max, smooth: true, lineStyle: { width: 1, color: c.gust, type: 'dashed' }, itemStyle: { color: c.gust } }
                 );
-                
+
                 if (currentView === 'climate') {
                     seriesList.push(
                         { name: '相对湿度', type: 'line', xAxisIndex: 3, yAxisIndex: 4, data: d.relative_humidity_2m_mean, smooth:true, itemStyle: { color: c.humid } }
@@ -1377,14 +1292,14 @@ function processData(data, view) {
             seriesList.push(
                 { name: '海平面气压', type: 'line', xAxisIndex: 3, yAxisIndex: 3, data: isEns ? d.pressure_mean : (d.pressure_msl_mean || new Array(dates.length).fill(1013)), smooth: true, lineStyle: { width: 2, color: c.pressure }, areaStyle: { opacity: 0.1, color: c.pressure } }
             );
-            
+
             let yAxes = [
                 { type: 'value', name: '摄氏度', gridIndex: 0, min: tempAxis.min, max: tempAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.tMean }, scale: false },
                 { type: 'value', name: '毫米', gridIndex: 1, min: precipAxis.min, max: precipAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.rain }, scale: false },
                 { type: 'value', name: '米/秒', gridIndex: 2, min: windAxis.min, max: windAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.wind }, scale: false },
                 { type: 'value', name: '百帕', gridIndex: 3, min: pressureAxis.min, max: pressureAxis.max, splitLine: { lineStyle: { type: 'dashed', color: c.grid } }, axisLabel: { color: c.pressure }, scale: false }
             ];
-            
+
             if (currentView === 'climate') {
                 yAxes.push({ type: 'value', name: '%', gridIndex: 3, splitLine: { show: false }, axisLabel: { color: c.humid }, position: 'right', min: 0, max: 100, scale: false });
             } else {
@@ -1395,11 +1310,11 @@ function processData(data, view) {
                 backgroundColor: '#1e293b',
                 title: {
                     text: `{name|${code}-${name}} {tag|${viewName}} {info|${modelInfo} | Update: ${updateStr}}`,
-                    left: 20, top: 30, 
+                    left: 20, top: 30,
                     textStyle: { rich: {
                         name: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
                         tag: { color: '#0f172a', backgroundColor: isEns ? '#fbbf24' : c.rain, borderRadius: 3, padding: [2, 6], fontSize: 12, fontWeight: 'bold' },
-                        info: { color: '#94a3b8', fontSize: 12, padding: [4, 0, 0, 10] } 
+                        info: { color: '#94a3b8', fontSize: 12, padding: [4, 0, 0, 10] }
                     }}
                 },
                 tooltip: {
@@ -1412,7 +1327,7 @@ function processData(data, view) {
                         const ts = d.time[i];
                         const dt = new Date(ts * 1000);
                         const dateStr = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
-                        
+
                         const wDir = (d.wind_direction_10m_dominant && d.wind_direction_10m_dominant[i]) ? d.wind_direction_10m_dominant[i] : null;
                         let html = `<div style="border-bottom:1px solid #555;margin-bottom:6px;padding-bottom:2px;font-weight:bold;color:#fff">${dateStr}</div>`;
                         params.forEach(p => {
@@ -1422,7 +1337,7 @@ function processData(data, view) {
                                 else if (p.seriesName.includes('降') || p.seriesName.includes('水') || p.seriesName.includes('雪')) unit = 'mm';
                                 else if (p.seriesName.includes('风')) unit = 'm/s';
                                 else if (p.seriesName.includes('气压')) unit = 'hPa';
-                                else if (p.seriesName.includes('湿度')) unit = '%'; 
+                                else if (p.seriesName.includes('湿度')) unit = '%';
                                 html += `<div style="display:flex;justify-content:space-between;color:${p.color};min-width:150px;line-height:1.5;"><span>${p.marker}${p.seriesName}</span><span style="font-weight:bold;margin-left:10px">${p.value} ${unit}</span></div>`;
                             }
                         });
@@ -1435,10 +1350,10 @@ function processData(data, view) {
                 axisPointer: { link: { xAxisIndex: 'all' } },
                 legend: legends,
                 grid: gridSettings,
-                xAxis: [ 
-                    { ...commonXAxis, gridIndex: 0 }, 
-                    { ...commonXAxis, gridIndex: 1 }, 
-                    { ...commonXAxis, gridIndex: 2 }, 
+                xAxis: [
+                    { ...commonXAxis, gridIndex: 0 },
+                    { ...commonXAxis, gridIndex: 1 },
+                    { ...commonXAxis, gridIndex: 2 },
                     { ...commonXAxis, gridIndex: 3 }
                 ],
                 yAxis: yAxes,
@@ -1463,7 +1378,7 @@ function processData(data, view) {
             if(typeof echarts === 'undefined') {
                 alert("组件加载失败，请检查网络");
             } else {
-                queryAll(); 
+                queryAll();
             }
         };
     </script>
