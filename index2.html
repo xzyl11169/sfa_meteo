@@ -278,7 +278,7 @@
 
     <script>
         const AIRPORTS = {
-            'ZHEC': {lat: 30.32, lon: 115.05, name: "鄂州花湖"},
+            'ZHEC': {lat: 30.342856, lon: 115.029611, name: "鄂州花湖"},
             'ZGSZ': {lat: 22.62, lon: 113.81, name: "深圳宝安"},
             'ZSHC': {lat: 30.23, lon: 120.43, name: "杭州萧山"},
             'ZBAA': {lat: 40.08, lon: 116.58, name: "北京首都"}
@@ -636,6 +636,7 @@
 
                 const total = tasks.length;
                 let completed = 0;
+                let successful = 0;
 
                 await Promise.all(tasks.map(async (task) => {
                     if (isLoadingAborted) return;
@@ -668,6 +669,7 @@
                             DATA_CACHE[task.key] = { data: processData(data, task.key), modelName: mName };
                         }
 
+                        successful++;
                         completed++;
                         updateLoadStatus((completed / total) * 100, `获取 ${task.label} 数据...`);
 
@@ -677,6 +679,11 @@
                         updateLoadStatus((completed / total) * 100, `跳过 ${task.label} (失败)`);
                     }
                 }));
+
+                if (!isLoadingAborted && successful === 0) {
+                    showError("所有预报数据均加载失败，请检查网络或稍后重试。");
+                    return;
+                }
 
                 if (!isLoadingAborted) {
                     document.getElementById('loader').style.display = 'none';

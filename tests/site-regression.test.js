@@ -57,10 +57,14 @@ assert(/id="btn-visibility"/.test(index2), 'index2 should include a visibility f
 assert(/hourly: 'visibility'/.test(index2), 'index2 should request visibility data');
 assert(/function\s+renderVisibilityChart\s*\(/.test(index2), 'index2 should render visibility as a separate forecast');
 assert(/24\.1 km/.test(index2), 'index2 should guard against capped 24.1 km visibility values');
+assert(/let\s+successful\s*=\s*0/.test(scriptOf(index2, 'index2.html')), 'index2 should count successful data requests');
+assert(/successful\s*===\s*0/.test(scriptOf(index2, 'index2.html')), 'index2 should detect when every data request fails');
+assert(/showError\("所有预报数据均加载失败/.test(scriptOf(index2, 'index2.html')), 'index2 should show an error when every data request fails');
 
 const readme = read('README.md');
 assert(/稳定性优化说明/.test(readme), 'README should document stability improvements');
 assert(/外部依赖访问要求/.test(readme), 'README should document external dependency requirements');
 assert(/index1/.test(readme), 'README should document the refined forecast page path');
+assert(/未来 10 天/.test(readme), 'README should describe the refined forecast as a 10-day product');
 
 console.log('site regression checks passed');
