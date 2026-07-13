@@ -37,6 +37,7 @@ assert(/href="\.\/index1"/.test(home), 'homepage should link to refined forecast
 assert(/href="\.\/index2"/.test(home), 'homepage should link to multi-scale forecast page');
 assert(/href="\.\/index3"/.test(home), 'homepage should link to sunlight page');
 assert(/tool-tile/.test(home), 'homepage should use tile entry layout');
+assert(/0-10D ECMWF/.test(home), 'homepage should describe the refined forecast as a 10-day product');
 assert(!/<script[\s>]/.test(home), 'homepage should stay lightweight without business scripts');
 assert(!/GitHub Pages 静态部署|Open-Meteo 数据源|机场库缓存兜底/.test(home), 'homepage should not show deployment/source status pills');
 
