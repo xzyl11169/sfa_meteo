@@ -971,6 +971,13 @@ function processData(data, view) {
                 ? getNiceAxisRange(visKm.filter(v => Number.isFinite(v)), { includeZeroMin: true, floorZero: true, paddingRatio: 0.12 })
                 : { min: 0, max: 25 };
 
+            // 6面板需要更高容器，避免轴标签与图例相互遮挡（复位在 renderChart 中处理）
+            const targetH = showVis ? '1400px' : '1200px';
+            if (dom.style.height !== targetH) {
+                dom.style.height = targetH;
+                if (myChart) myChart.resize();
+            }
+
             const visSrcStr = showVis ? ' + Open-Meteo能见度' : '';
             const initStr = `${modelInfo}${visSrcStr} | Update: ${updateStr}${cappedNotice}`;
 
@@ -985,12 +992,12 @@ function processData(data, view) {
             const marker = (color) => `<span style="display:inline-block;margin-right:4px;border-radius:50%;width:10px;height:10px;background-color:${color};"></span>`;
 
             const gridSettings = showVis ? [
-                { top: '10%', height: '11%', left: 60, right: 50 },
-                { top: '24.5%', height: '11%', left: 60, right: 50 },
-                { top: '39%', height: '11%', left: 60, right: 50 },
-                { top: '53.5%', height: '11%', left: 60, right: 50 },
-                { top: '68%', height: '11%', left: 60, right: 50 },
-                { top: '82.5%', height: '11%', left: 60, right: 50 }
+                { top: '9%', height: '10%', left: 60, right: 50 },
+                { top: '24%', height: '10%', left: 60, right: 50 },
+                { top: '39%', height: '10%', left: 60, right: 50 },
+                { top: '54%', height: '10%', left: 60, right: 50 },
+                { top: '69%', height: '10%', left: 60, right: 50 },
+                { top: '84%', height: '10%', left: 60, right: 50 }
             ] : [
                 { top: '10%', height: '12%', left: 60, right: 50 },
                 { top: '28%', height: '12%', left: 60, right: 50 },
@@ -1005,7 +1012,7 @@ function processData(data, view) {
                 textStyle: { color: colors.text, fontSize: 11 }
             };
 
-            const legendTops = showVis ? ['8%', '22.5%', '37%', '51.5%', '66%', '80.5%'] : ['8%', '26%', '44%', '62%', '80%'];
+            const legendTops = showVis ? ['7%', '22%', '37%', '52%', '67%', '82%'] : ['8%', '26%', '44%', '62%', '80%'];
             const legends = [
                 { ...legendCommon, top: legendTops[0], right: 50, data: [{name: '风速', itemStyle:{color: colors.wind}}, {name: '阵风', itemStyle:{color: colors.gust}}] },
                 { ...legendCommon, top: legendTops[1], right: 50, data: [{name: '降雨', itemStyle:{color: colors.rain}}, {name: '降雪', itemStyle:{color: colors.snow}}] },
@@ -1151,6 +1158,11 @@ function processData(data, view) {
 
         function renderChart(d, code, name, modelInfo) {
             const dom = document.getElementById('chart');
+            // 复位容器高度：精细化预测6面板会加高到1400px，其余视图用默认1200px
+            if (dom.style.height && dom.style.height !== '1200px') {
+                dom.style.height = '1200px';
+                if (myChart) myChart.resize();
+            }
             if (!myChart) {
                 myChart = echarts.init(dom, 'dark');
                 window.addEventListener('resize', () => myChart.resize());
