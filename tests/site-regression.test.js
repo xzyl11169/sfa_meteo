@@ -54,9 +54,9 @@ assert(!/数据来源：Open-Meteo \/ mwgg Airports \/ ECharts/.test(read('index
 const index2 = read('index2.html');
 assert(!/id="sourceStatusPanel"/.test(index2), 'index2 should not show source status chips');
 assert(!/data-source-status/.test(index2), 'index2 should not render per-source status chips');
-assert(/id="btn-visibility"/.test(index2), 'index2 should include a visibility forecast tab');
+assert(!/id="btn-visibility"/.test(index2), 'index2 should not keep a separate visibility tab after merging into the hourly view');
 assert(/hourly: 'visibility'/.test(index2), 'index2 should request visibility data');
-assert(/function\s+renderVisibilityChart\s*\(/.test(index2), 'index2 should render visibility as a separate forecast');
+assert(/name: '能见度', type: 'line', xAxisIndex: 5/.test(index2), 'index2 should render visibility as the sixth panel of the refined hourly chart');
 assert(/24\.1 km/.test(index2), 'index2 should guard against capped 24.1 km visibility values');
 assert(/let\s+successful\s*=\s*0/.test(scriptOf(index2, 'index2.html')), 'index2 should count successful data requests');
 assert(/successful\s*===\s*0/.test(scriptOf(index2, 'index2.html')), 'index2 should detect when every data request fails');
